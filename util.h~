@@ -23,7 +23,7 @@ void myprintf(char *fmt, ...){
     cp++;
     switch(*cp) {
     case 'c' : putc(*ip); break;
-    case 's' : prints((char)ip); break;
+    case 's' : prints(*ip); break;
     case 'u' : printu(*ip); break;
     case 'd' : printd(*ip); break;
     case 'x' : printx(*ip); break;
