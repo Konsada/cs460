@@ -2,4 +2,4 @@
 
 	clear
 	clear
-	gcc -m32 util.h
+	gcc -m32 main.c util.h

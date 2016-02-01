@@ -4,6 +4,7 @@
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned long u32;
+
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
@@ -13,15 +14,15 @@ void myprintf(char *fmt, ...){
   u32 *up;
   while(*cp){
     if(*cp != '%'){
-      putchar(*cp);
+      putc(*cp);
       if(*cp == '\n')
-	putchar('\r');
+	putc('\r');
       cp++;
       continue;
     }
     cp++;
     switch(*cp) {
-    case 'c' : putchar((char)*ip); break;
+    case 'c' : putc(*ip); break;
     case 's' : prints((char *)*ip); break;
     case 'u' : printu(*ip); break;
     case 'd' : printd(*ip); break;
@@ -35,7 +36,7 @@ void myprintf(char *fmt, ...){
 
 void prints(char *fmt) {
   while(*fmt++){
-    putchar(*fmt);
+    putc(*fmt);
   }
   putchar('\n');
 }
@@ -49,29 +50,30 @@ int rpu (u32 x) {
     putchar(c);
   }
 }
+
 void printu(u32 x) {
 
   if(x)
     rpu(x);
   else
-    putchar('0');
-  putchar(' ');
+    putc('0');
+  putc(' ');
 }
 
 void printd(int x) {
 
   if(x<0){
-    putchar('-');
+    putc('-');
     x = x*(-1);
   }
   rpu(x);
-  putchar(' ');
+  putc(' ');
 }
 
 void printx(u32 x) {
   BASE = 16;
-  putchar('0');
-  putchar('x');
+  putc('0');
+  putc('x');
   rpu((u32)x);
   BASE = 10;
 }
@@ -80,13 +82,13 @@ void printl(u32 x) {
   if(x)
     rpu(x);
   else
-    putchar('0');
+    putc('0');
 }
 
 void printX(u32 x) {
   BASE = 16;
-  putchar('0');
-  putchar('x');
+  putc('0');
+  putc('x');
   rpu(x);
   BASE = 10;
 }
