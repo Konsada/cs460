@@ -77,19 +77,6 @@ int scheduler()
    running = running->next;
 }
 
-main()
-{
-  printf("MTX starts in main()\n");
-  init();
-  kfork();
-  while(1){
-    if(readyQueue){
-      myprintf("proc %d  running : enter a key : \n", running->pid);
-      getc();
-      tswitch();
-    }
-  }
-}
 // e.g. get_proc(&freeList);
 PROC *get_proc(PROC **list){
   PROC *p;
@@ -112,11 +99,64 @@ int put_proc(PROC **list, PROC *p) {
   return 0;
 }
 
+// linear queue with running proc in the highest priority 
 int enqueue(PROC **queue, PROC *p) {
   PROC *prev, *cur;
-  prev = cur = *queue;
+  prev = *queue;
+  if(!prev){
+    queue = &p;
+    return 1;
+  }
+  if(prev->next)
+    cur = prev->next;
+  else{
+    if(prev->priority > p->priority)
+      prev->next = p;
+    else{
+      p->next = prev;
+      queue = &p;
+    }
+    return 1;
+  }
   while(cur) {
-    
+    if(prev->priority < p->priority)
+      break;
   }
   prev->next = p;
+  p->next = cur;
+  return 1;
+}
+PROC *kfork() // create a child process, begin from body()
+{
+  int i;
+  PROC *p = get_proc(&freeList);
+  if(!p) {
+    printf("no more PROC, kfork() failed\n");
+    return 0;
+  }
+  p->status = READY;
+  p->priority = 1;        //priority = 1 for all proc except P0
+  p->ppid = running->pid; //parent = running
+  /* Initialize new proc's kstack[ ] */
+  for (i = 1; i < 10; i++)          // saved CPU registers
+    p->kstack[SSIZE - i] = 0; 
+    p->kstack[SSIZE-1] = int(body); // resume point = address of body()
+    p->ksp = &p->kstack[SSIZE-9];   // proc saved sp
+    enqueue(&readyQueue, p);        // enter p into readyQueue by priority
+    return p;
+  }
+}
+
+main()
+{
+  printf("MTX starts in main()\n");
+  init();
+  kfork();
+  while(1){
+    if(readyQueue){
+      myprintf("proc %d  running : enter a key : \n", running->pid);
+      getc();
+      tswitch();
+    }
+  }
 }
