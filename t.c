@@ -84,13 +84,13 @@ main()
   kfork();
   while(1){
     if(readyQueue){
-      myprintf("proc %d  running : enter a key : \n", running.pid);
+      myprintf("proc %d  running : enter a key : \n", running->pid);
       getc();
       tswitch();
     }
   }
 }
-
+// e.g. get_proc(&freeList);
 PROC *get_proc(PROC **list){
   PROC *p;
   p = *list;
@@ -102,7 +102,7 @@ PROC *get_proc(PROC **list){
   }
   return 0;
 }
-
+// e.g. put_proc(&freeList, p);
 int put_proc(PROC **list, PROC *p) {
   PROC *ptr;
   ptr = *list;
