@@ -2,93 +2,89 @@
 #define UTIL_H
 
 typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned long u32;
+typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
-#define stdout 1
-
-void myprints(char *fmt) {
-  while(*fmt){
-    putc(*fmt);
-    *fmt++;
-  }
-}
-
-int rpu (u32 x) {
-
-  char c;
-  if(x) {
-    c = table[x%BASE];
-    rpu(x/BASE);
-    putc(c);
-  }
-}
-void myprintu(u32 x) {
-
-  if(x)
-    rpu(x);
-  else
-    putc('0');
-  putc(' ');
-}
-
-void myprintd(int x) {
-
-  if(x<0){
-    putc('-');
-    x = x*(-1);
-  }
-  rpu(x);
-  putc(' ');
-}
-
-void myprintx(u32 x) {
-  BASE = 16;
-  putc('0');
-  putc('x');
-  rpu((u32)x);
-  BASE = 10;
-}
-
-void myprintl(u32 x) {
-  if(x)
-    rpu(x);
-  else
-    putc('0');
-}
-
-void myprintX(u32 x) {
-  BASE = 16;
-  putc('0');
-  putc('x');
-  rpu(x);
-  BASE = 10;
-}
 
 void myprintf(char *fmt, ...){
   char *cp = fmt;
-  u32 *ip = (u32 *)&fmt+1;
-  u32 *up;
+  u16 *ip = (u16 *)&fmt+1;
+  u16 *up;
   while(*cp){
     if(*cp != '%'){
-      putc(*cp);
+      putchar(*cp);
       if(*cp == '\n')
-	putc('\r');
+	putchar('\r');
       cp++;
       continue;
     }
     cp++;
     switch(*cp) {
-    case 'c' : putc((char)*ip); break;
-    case 's' : myprints((char *)*ip); break;
-    case 'u' : myprintu(*ip); break;
-    case 'd' : myprintd(*ip); break;
-    case 'x' : myprintx(*ip); break;
-    case 'l' : myprintl((u32 *)*ip); break;
-    case 'X' : myprintX((u32 *)*ip); break;
+    case 'c' : putchar((char)*ip); break;
+    case 's' : prints((char *)*ip); break;
+    case 'u' : printu(*ip); break;
+    case 'd' : printd(*ip); break;
+    case 'x' : printx(*ip); break;
     }
     cp++; ip++;
   }
+}
+
+void prints(char *fmt) {
+  while(*fmt){
+    putchar(*fmt);
+    *fmt++;
+  }
+}
+
+int rpu (u16 x) {
+
+  char c;
+  if(x) {
+    c = table[x%BASE];
+    rpu(x/BASE);
+    putchar(c);
+  }
+}
+void printu(u16 x) {
+
+  if(x)
+    rpu(x);
+  else
+    putchar('0');
+  putchar(' ');
+}
+
+void printd(int x) {
+
+  if(x<0){
+    putchar('-');
+    x = x*(-1);
+  }
+  rpu(x);
+  putchar(' ');
+}
+
+void printx(u16 x) {
+  BASE = 16;
+  putchar('0');
+  putchar('x');
+  rpu((u16)x);
+  BASE = 10;
+}
+
+void printl(u16 x) {
+  if(x)
+    rpu(x);
+  else
+    putchar('0');
+}
+
+void printX(u16 x) {
+  BASE = 16;
+  putchar('0');
+  putchar('x');
+  rpu(x);
+  BASE = 10;
 }
 #endif
