@@ -10,7 +10,7 @@ u16 BASE = 10;
 
 void myprints(char *fmt) {
   while(*fmt){
-    putc(*fmt,stdout);
+    putc(*fmt);
     *fmt++;
   }
 }
@@ -21,7 +21,7 @@ int rpu (u32 x) {
   if(x) {
     c = table[x%BASE];
     rpu(x/BASE);
-    putc(c,stdout);
+    putc(c);
   }
 }
 void myprintu(u32 x) {
@@ -29,24 +29,24 @@ void myprintu(u32 x) {
   if(x)
     rpu(x);
   else
-    putc('0',stdout);
-  putc(' ',stdout);
+    putc('0');
+  putc(' ');
 }
 
 void myprintd(int x) {
 
   if(x<0){
-    putc('-',stdout);
+    putc('-');
     x = x*(-1);
   }
   rpu(x);
-  putc(' ',stdout);
+  putc(' ');
 }
 
 void myprintx(u32 x) {
   BASE = 16;
-  putc('0',stdout);
-  putc('x',stdout);
+  putc('0');
+  putc('x');
   rpu((u32)x);
   BASE = 10;
 }
@@ -55,13 +55,13 @@ void myprintl(u32 x) {
   if(x)
     rpu(x);
   else
-    putc('0',stdout);
+    putc('0');
 }
 
 void myprintX(u32 x) {
   BASE = 16;
-  putc('0',stdout);
-  putc('x',stdout);
+  putc('0');
+  putc('x');
   rpu(x);
   BASE = 10;
 }
@@ -72,15 +72,15 @@ void myprintf(char *fmt, ...){
   u32 *up;
   while(*cp){
     if(*cp != '%'){
-      putc(*cp,stdout);
+      putc(*cp);
       if(*cp == '\n')
-	putc('\r',stdout);
+	putc('\r');
       cp++;
       continue;
     }
     cp++;
     switch(*cp) {
-    case 'c' : putc((char)*ip,stdout); break;
+    case 'c' : putc((char)*ip); break;
     case 's' : myprints((char *)*ip); break;
     case 'u' : myprintu(*ip); break;
     case 'd' : myprintd(*ip); break;
