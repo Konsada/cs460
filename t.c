@@ -1,3 +1,4 @@
+#include "util.h"
 #define NPROC 9                // number of PROCs
 #define SSIZE 1024             // per proc stack area 
 #define RED 
@@ -68,7 +69,7 @@ int init()
 
    freeList = &proc[0];
    readyQueue = 0;
-   printf("init complete\n");
+   myprintf("init complete\n");
  }
    
 int scheduler()
@@ -83,7 +84,7 @@ main()
   kfork();
   while(1){
     if(readyQueue){
-      printf("proc %d  running : enter a key : \n", running.pid);
+      myprintf("proc %d  running : enter a key : \n", running.pid);
       getc();
       tswitch();
     }
