@@ -34,10 +34,10 @@ void myprintf(char *fmt, ...){
 }
 
 void prints(char *fmt) {
-  while(*fmt++){
+  while(*fmt){
     putchar(*fmt);
+    *fmt++;
   }
-  putchar('\n');
 }
 
 int rpu (u32 x) {
