@@ -90,4 +90,32 @@ main()
   }
 }
 
+PROC *get_proc(PROC **list){
+  PROC *p;
+  p = *list;
+  while(p) {
+    if(p->status == FREE) {
+      return p;
+    }
+    p = p->next;
+  }
+  return 0;
+}
 
+int put_proc(PROC **list, PROC *p) {
+  PROC *ptr;
+  ptr = *list;
+  while(ptr) {
+  }
+  ptr->next = p;
+  return 0;
+}
+
+int enqueue(PROC **queue, PROC *p) {
+  PROC *prev, *cur;
+  prev = cur = *queue;
+  while(cur) {
+    
+  }
+  prev->next = p;
+}
