@@ -2,15 +2,14 @@
 #define UTIL_H
 
 typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned long u32;
+typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
 void myprintf(char *fmt, ...){
   char *cp = fmt;
-  u32 *ip = (u32 *)&fmt+1;
-  u32 *up;
+  u16 *ip = (u16 *)&fmt+1;
+  u16 *up;
   while(*cp){
     if(*cp != '%'){
       putchar(*cp);
@@ -26,8 +25,6 @@ void myprintf(char *fmt, ...){
     case 'u' : printu(*ip); break;
     case 'd' : printd(*ip); break;
     case 'x' : printx(*ip); break;
-    case 'l' : printl((u32 *)*ip); break;
-    case 'X' : printX((u32 *)*ip); break;
     }
     cp++; ip++;
   }
@@ -40,7 +37,7 @@ void prints(char *fmt) {
   }
 }
 
-int rpu (u32 x) {
+int rpu (u16 x) {
 
   char c;
   if(x) {
@@ -49,7 +46,7 @@ int rpu (u32 x) {
     putchar(c);
   }
 }
-void printu(u32 x) {
+void printu(u16 x) {
 
   if(x)
     rpu(x);
@@ -68,22 +65,22 @@ void printd(int x) {
   putchar(' ');
 }
 
-void printx(u32 x) {
+void printx(u16 x) {
   BASE = 16;
   putchar('0');
   putchar('x');
-  rpu((u32)x);
+  rpu((u16)x);
   BASE = 10;
 }
 
-void printl(u32 x) {
+void printl(u16 x) {
   if(x)
     rpu(x);
   else
     putchar('0');
 }
 
-void printX(u32 x) {
+void printX(u16 x) {
   BASE = 16;
   putchar('0');
   putchar('x');
