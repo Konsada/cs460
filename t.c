@@ -92,13 +92,15 @@ int enqueue(PROC **queue, PROC *p) {
 // remove a PROC with the highest priority (the first one in queue)
 // returns its pointer
 PROC *dequeue (PROC **queue) {
-  PROC *p;
-  p = *queue;
+  PROC *p = *queue;
+  myprintf("dequeue()\n");
+  myprintf("queue->pid = %d\n", (*queue)->pid);
+  printProc(freeList);
   if(*queue) {
-  *queue = (p->next);
+    *queue = (*queue)->next;
   }
+  printProc(p);
   return p;
-  
 }
 
 int exit(){
@@ -129,12 +131,17 @@ int printQueue(PROC *queue, char *queueName) {
 PROC *kfork() // create a child process, begin from body()
 {
   int i;
-  PROC *p = get_proc(&freeList);
+  PROC *p = 0;
+  
+  p = get_proc(&freeList);
   myprintf("kfork()\n");
+  myprintf("PROCESS RECEIVED:\n");
+  printProc(p);
   if(!p) {
     printf("no more PROC, kfork() failed\n");
     return 0;
   }
+
   p->status = READY;
   p->priority = 1;        //priority = 1 for all proc except P0
   p->ppid = running->pid; //parent = running
@@ -190,7 +197,7 @@ int init()
                p->kstack[SSIZE-j] = 0;
           p->ksp = &(p->kstack[SSIZE-9]);
        }
-       printProc(p);
+       //printProc(p);
    }       
    running = &proc[0];
    p->status = READY;
@@ -199,12 +206,13 @@ int init()
    
    proc[NPROC-1].next = NULL;         // all procs form a circular link list
    running = &proc[0];                    // P0 is running 
-   printProc(running);
+   //printProc(running);
    freeList = &proc[1];
+   //printProc(freeList);
    printQueue(readyQueue, "readyQueue");
-   readyQueue = &proc[0];
-   myprintf("RUNNING PROC\n");
-   printProc(running);
+   readyQueue = 0;
+   //myprintf("RUNNING PROC\n");
+   //printProc(running);
    myprintf("init complete\n");
  }
 
