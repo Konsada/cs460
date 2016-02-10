@@ -39,8 +39,10 @@ void myprintd(int x) {
     putc('-');
     x = x*(-1);
   }
-  rpu(x);
-  putc(' ');
+  if(x)
+    rpu(x);
+  else
+    putc('0');
 }
 
 void myprintx(u16 x) {

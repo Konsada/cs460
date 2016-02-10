@@ -2,7 +2,7 @@
 #define NPROC 9                // number of PROCs
 #define SSIZE 1024             // per proc stack area 
 #define RED 
-
+#define NULL 0
 typedef enum {FREE, READY, SLEEP, BLOCK, ZOMBIE} STATUS;
 
 typedef struct proc{
@@ -33,23 +33,24 @@ int scheduler()
 
 // e.g. get_proc(&freeList);
 PROC *get_proc(PROC **list){
-  PROC *p;
-  p = *list;
-  while(p) {
-    if(p->status == FREE) {
-      return p;
-    }
-    p = p->next;
-  }
+  if(*list)
+    return dequeue(&list);
   return 0;
 }
 // e.g. put_proc(&freeList, p);
 int put_proc(PROC **list, PROC *p) {
   PROC *ptr;
   ptr = *list;
-  while(ptr) {
+
+  p->status = FREE;
+  if(*list){
+    p->next = *list;
+    *list = p;
   }
-  ptr->next = p;
+  else {
+    *list = p;
+    p->next = NULL;
+  }
   return 0;
 }
 
@@ -77,10 +78,14 @@ int enqueue(PROC **queue, PROC *p) {
   while(cur) {
     if(prev->priority < p->priority)
       break;
+    //    prev = cur;
+    //    cur = cur->next;
+    myprintf("prev->pid:%d -> cur->pid:%d\n", prev, cur);
   }
   prev->next = p;
   p->next = cur;
   p->status = READY;
+  printQueue(queue);
   myprintf("p->status(pid:%d) = READY\n", p->pid);
   return 1;
 }
@@ -88,20 +93,38 @@ int enqueue(PROC **queue, PROC *p) {
 // returns its pointer
 PROC *dequeue (PROC **queue) {
   PROC *p;
-  p = queue;
-  queue = &(p->next);
-
+  p = *queue;
+  if(*queue) {
+  *queue = (p->next);
+  }
   return p;
+  
 }
 
-int printQueue(PROC *queue) {
-  myprintf("printQueue()\n");
-  while(queue){
-    myprintf("[%d, %d]->", queue->pid, queue->priority);
-    queue = queue->next;
+int exit(){
+  if(running->pid == 0) {
+    body();
   }
-  myprintf("NULL");
+  else {
+    running->status = ZOMBIE;
+    tswitch();
+  }
   return 0;
+}
+int printQueue(PROC *queue, char *queueName) {
+  PROC *p = 0;
+  myprintf("printQueue(%s)\n", queueName);
+  p = queue;
+  if(!p){
+    myprintf("Queue is empty!\n");
+    return 0;
+  }
+  while(p){
+    myprintf("[%d, %d]->", p->pid, p->priority);
+    p = p->next;
+  }
+  myprintf("NULL\n");
+  return 1;
 }
 PROC *kfork() // create a child process, begin from body()
 {
@@ -113,19 +136,35 @@ PROC *kfork() // create a child process, begin from body()
     return 0;
   }
   p->status = READY;
-  myprintf("p->status = READY\n");
   p->priority = 1;        //priority = 1 for all proc except P0
-  myprintf("p->priority = 1\n");
   p->ppid = running->pid; //parent = running
-  myprintf("p->ppid = %d\n", p->ppid);
   /* Initialize new proc's kstack[ ] */
   for (i = 1; i < 10; i++)          // saved CPU registers
     p->kstack[SSIZE - i] = 0; 
   p->kstack[SSIZE-1] = (int)body; // resume point = address of body()
-  p->ksp = &p->kstack[SSIZE-9];   // proc saved sp
+  printQueue(freeList, "freeList");
+  p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
   enqueue(&readyQueue, p);        // enter p into readyQueue by priority
   myprintf("exit kfork()\n");
   return p;
+}
+
+int printProc(PROC *p) {
+  if(p){
+  myprintf("p->next:     %x\n", p->next);
+  myprintf("p->ksp:      %x\n", p->ksp);
+  myprintf("p->priority: %d\n", p->priority);
+  myprintf("p->pid:      %d\n", p->pid);
+  myprintf("p->ppid:     %d\n", p->ppid);
+  myprintf("p->parent:   %x\n", p->parent);
+  myprintf("p->kstack:   %x\n", p->kstack);
+  getc();
+  }
+  else {
+    myprintf("Process not found!\n");
+    return 0;
+  }
+  return 1;
 }
 
 int init()
@@ -138,12 +177,11 @@ int init()
        p = &proc[i];
        p->status = FREE;
        p->pid = i;                        // pid = 0,1,2,..NPROC-1
-       printf("p->pid = %d\n", i);
        p->priority = 0;
        p->ppid = 0;
        p->parent = 0;
-       if(i<NPROC-1)
-       p->next = &proc[i+1];              // point to next proc
+       if(i < NPROC - 1)
+	 p->next = &proc[i+1];
        else
 	 p->next = 0;
        if (i){                            // not for P0
@@ -152,18 +190,21 @@ int init()
                p->kstack[SSIZE-j] = 0;
           p->ksp = &(p->kstack[SSIZE-9]);
        }
-       else{
-	 running = &proc[0];
-	 p->status = READY;
-	 p->parent = &proc[0];
-       }
-   }
-   proc[NPROC-1].next = &proc[0];         // all procs form a circular link list
-
+       printProc(p);
+   }       
+   running = &proc[0];
+   p->status = READY;
+   p->parent = &proc[0];
+       
+   
+   proc[NPROC-1].next = NULL;         // all procs form a circular link list
    running = &proc[0];                    // P0 is running 
-
-   freeList = &proc[0];
-   readyQueue = 0;
+   printProc(running);
+   freeList = &proc[1];
+   printQueue(readyQueue, "readyQueue");
+   readyQueue = &proc[0];
+   myprintf("RUNNING PROC\n");
+   printProc(running);
    myprintf("init complete\n");
  }
 
@@ -175,12 +216,15 @@ body()
   while(c != 'q'){
     color = running->pid + 7;
     myprintf("proc %d running : enter a key[s|q|f] : ", running->pid);
-    c = getc(); 
+    c = getc();
     myprintf("%c\n", c);
     switch(c){
     case 's': tswitch();
       break;
-    case 'q': myprintf("quit\n");
+    case 'q': myprintf("exit()\n");
+      running->status = ZOMBIE;
+      tswitch();
+      exit();
       break;
     case 'f': 
       child = kfork();
@@ -195,14 +239,11 @@ body()
 
 int main()
 {
-  printf("MTX starts in main()\n");
+  myprintf("MTX starts in main()\n");
   init();
+  printQueue(freeList, "freeList");
+  printQueue(readyQueue, "readyQueue");
   kfork();
-  myprintf("start loop\n");
-  while(1){
-    if(readyQueue){
-      myprintf("readyQueue = %d\n", readyQueue);
-      tswitch();
-    }
-  }
+  tswitch();
+  body();
 }
