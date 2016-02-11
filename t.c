@@ -23,23 +23,74 @@ extern int color;
 
 enqueue(); 
 PROC *dequeue (PROC **queue);
-int body();
+body();
+ksleep(int event);
+kwakeup(int event);
+kexit(int exitValue);
+kwait(int *status); 
+do_tswitch();
+do_kfork();
+do_exit();
+do_sleep();
+do_wakeup();
+do_wait();
+
+do_tswitch(){
+  tswitch();
+}
+
+do_kfork(){
+  child = kfork();
+  if(child)
+    myprintf("Successfully forked %d\n", child->pid);
+  else
+    myprintf("Failed fork\n");
+}
+
+do_exit(){
+
+  myprintf("Please enter an event value: \n");
+  getint(stdin);
+  running->status = ZOMBIE;
+  tswitch();
+  exit();
+}
+do_sleep(){
+
+}
+do_wakeup(){
+
+}
+do_wait(){
+
+}
+
+ksleep(int event){
+
+}
+kwakeup(int event){
+}
+kexit(int exitValue){
+}
+kwait(int *status){
+}
+
 
 int scheduler()
 {
   printQueue(readyQueue, "readyQueue");
-  printf("running status %d", running->status);
+  //  printf("running status %d", running->status);
   if (running->status == READY){
     enqueue(&readyQueue, running);
-    myprintf("running->pid: %d enqueued\n", running->pid);
+    //   myprintf("running->pid: %d enqueued\n", running->pid);
   }
   else{
     //    running = dequeue(&readyQueue);
     put_proc(&readyQueue, running);
   }
-  printQueue(readyQueue, "readyQueue");
+  //  printQueue(readyQueue, "readyQueue");
   running = dequeue(&readyQueue);
-  printQueue(readyQueue, "readyQueue");
+  //  printQueue(readyQueue, "readyQueue");
 }
 
 // e.g. get_proc(&freeList);
@@ -69,7 +120,7 @@ int put_proc(PROC **list, PROC *p) {
 int enqueue(PROC **queue, PROC *p) {
   PROC *prev, *cur;
 
-  myprintf("enqueue() priority = %d\n", p->priority);
+  //myprintf("enqueue() priority = %d\n", p->priority);
 
   prev = *queue;
   // myprintf("prev = %x\n", prev);
@@ -117,7 +168,7 @@ int exit(){
 }
 int printQueue(PROC *queue, char *queueName) {
   PROC *p = 0;
-  myprintf("printQueue(%s)\n", queueName);
+  //  myprintf("printQueue(%s)\n", queueName);
   p = queue;
   if(!p){
     myprintf("Queue is empty!\n");
@@ -148,6 +199,7 @@ PROC *kfork() // create a child process, begin from body()
   p->status = READY;
   p->priority = 1;        //priority = 1 for all proc except P0
   p->ppid = running->pid; //parent = running
+  p->parent = running;
 
   /* Initialize new proc's kstack[ ] */
   for (i = 1; i < 10; i++)          // saved CPU registers
@@ -226,24 +278,24 @@ body()
   myprintf("proc %d resumes to body()\n", running->pid);
   while(c != 'q'){
     color = running->pid + 7;
-    myprintf("proc %d running : enter a key[s|q|f] : ", running->pid);
+    myprintf("proc %d running : enter a key[s|q|f|z|a|w] : ", running->pid);
     c = getc();
     myprintf("%c\n", c);
-    printQueue(readyQueue,"");
+    //    printQueue(readyQueue,"");
     switch(c){
-    case 's': tswitch();
+    case 's': do_tswitch();
       break;
-    case 'q': myprintf("exit()\n");
-      running->status = ZOMBIE;
-      tswitch();
-      exit();
+    case 'q': 
+      do_exit();
       break;
     case 'f': 
-      child = kfork();
-      if(child)
-	myprintf("Successfully forked %d\n", child->pid);
-      else
-	myprintf("Failed fork\n");
+      do_kfork();
+      break;
+    case 'z' :
+      break;
+    case 'a' :
+      break;
+    case 'w' :
       break;
     }
   }
