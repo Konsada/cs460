@@ -34,7 +34,7 @@ int scheduler()
 // e.g. get_proc(&freeList);
 PROC *get_proc(PROC **list){
   if(*list)
-    return dequeue(&list);
+    return dequeue(&(*list));
   return 0;
 }
 // e.g. put_proc(&freeList, p);
@@ -94,8 +94,8 @@ int enqueue(PROC **queue, PROC *p) {
 PROC *dequeue (PROC **queue) {
   PROC *p = *queue;
   myprintf("dequeue()\n");
-  myprintf("queue->pid = %d\n", (*queue)->pid);
-  printProc(freeList);
+  //myprintf("queue->pid = %d\n", (*queue)->pid);
+  //printProc(freeList);
   if(*queue) {
     *queue = (*queue)->next;
   }
@@ -137,6 +137,7 @@ PROC *kfork() // create a child process, begin from body()
   myprintf("kfork()\n");
   myprintf("PROCESS RECEIVED:\n");
   printProc(p);
+
   if(!p) {
     printf("no more PROC, kfork() failed\n");
     return 0;
@@ -145,27 +146,31 @@ PROC *kfork() // create a child process, begin from body()
   p->status = READY;
   p->priority = 1;        //priority = 1 for all proc except P0
   p->ppid = running->pid; //parent = running
+
   /* Initialize new proc's kstack[ ] */
   for (i = 1; i < 10; i++)          // saved CPU registers
     p->kstack[SSIZE - i] = 0; 
+
   p->kstack[SSIZE-1] = (int)body; // resume point = address of body()
   printQueue(freeList, "freeList");
   p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
   enqueue(&readyQueue, p);        // enter p into readyQueue by priority
+
   myprintf("exit kfork()\n");
   return p;
 }
 
 int printProc(PROC *p) {
   if(p){
-  myprintf("p->next:     %x\n", p->next);
-  myprintf("p->ksp:      %x\n", p->ksp);
-  myprintf("p->priority: %d\n", p->priority);
-  myprintf("p->pid:      %d\n", p->pid);
-  myprintf("p->ppid:     %d\n", p->ppid);
-  myprintf("p->parent:   %x\n", p->parent);
-  myprintf("p->kstack:   %x\n", p->kstack);
-  getc();
+    myprintf("p:           %x\n", p);   
+    myprintf("p->next:     %x\n", p->next);
+    myprintf("p->ksp:      %x\n", p->ksp);
+    myprintf("p->priority: %d\n", p->priority);
+    myprintf("p->pid:      %d\n", p->pid);
+    myprintf("p->ppid:     %d\n", p->ppid);
+    myprintf("p->parent:   %x\n", p->parent);
+    myprintf("p->kstack:   %x\n", p->kstack);
+    getc();
   }
   else {
     myprintf("Process not found!\n");
@@ -204,15 +209,13 @@ int init()
    p->parent = &proc[0];
        
    
-   proc[NPROC-1].next = NULL;         // all procs form a circular link list
+   proc[NPROC-1].next = NULL;             // all procs form a linear link list
    running = &proc[0];                    // P0 is running 
-   //printProc(running);
    freeList = &proc[1];
-   //printProc(freeList);
-   printQueue(readyQueue, "readyQueue");
    readyQueue = 0;
-   //myprintf("RUNNING PROC\n");
-   //printProc(running);
+
+   printQueue(freeList, "freeList");
+   printQueue(readyQueue, "readyQueue");
    myprintf("init complete\n");
  }
 
@@ -249,8 +252,6 @@ int main()
 {
   myprintf("MTX starts in main()\n");
   init();
-  printQueue(freeList, "freeList");
-  printQueue(readyQueue, "readyQueue");
   kfork();
   tswitch();
   body();
