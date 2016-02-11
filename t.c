@@ -7,7 +7,7 @@ typedef enum {FREE, READY, SLEEP, BLOCK, ZOMBIE} STATUS;
 
 typedef struct proc{
   struct proc *next;
-  int    *ksp;               // saved ksp when not running
+  int    ksp;               // saved ksp when not running
   int    status;
   int    priority;
   int    pid;
@@ -20,15 +20,26 @@ int  procSize = sizeof(PROC);
 
 PROC proc[NPROC], *running, *freeList, *readyQueue;    // define NPROC procs
 extern int color;
-   
+
+enqueue(); 
 PROC *dequeue (PROC **queue);
 int body();
 
 int scheduler()
 {
-  if (running->status == READY)
+  printQueue(readyQueue, "readyQueue");
+  printf("running status %d", running->status);
+  if (running->status == READY){
     enqueue(&readyQueue, running);
+    myprintf("running->pid: %d enqueued\n", running->pid);
+  }
+  else{
+    //    running = dequeue(&readyQueue);
+    put_proc(&readyQueue, running);
+  }
+  printQueue(readyQueue, "readyQueue");
   running = dequeue(&readyQueue);
+  printQueue(readyQueue, "readyQueue");
 }
 
 // e.g. get_proc(&freeList);
@@ -58,48 +69,39 @@ int put_proc(PROC **list, PROC *p) {
 int enqueue(PROC **queue, PROC *p) {
   PROC *prev, *cur;
 
-  myprintf("enqueue()\n");
-  prev = queue;
-  myprintf("prev = %x\n", prev);
+  myprintf("enqueue() priority = %d\n", p->priority);
+
+  prev = *queue;
+  // myprintf("prev = %x\n", prev);
+
+  // readyQueue is empty
   if(!prev){
-    queue = &p;
+    *queue = p;
+    p->next = NULL;
     return 1;
   }
-  
-  cur = prev->next;
-  myprintf("cur = %x\n", cur);
-  if(prev->priority > p->priority)
-    prev->next = p;
+  // readyQueue is NOT empty
   else{
-    p->next = prev;
-    queue = &p;
+    while(prev->priority >= p->priority && prev->next) {
+      prev = prev->next;
+    }
+    p->next = prev->next;
+    prev->next = p;
+    return 1;
   }
-
-  while(cur) {
-    if(prev->priority < p->priority)
-      break;
-    //    prev = cur;
-    //    cur = cur->next;
-    myprintf("prev->pid:%d -> cur->pid:%d\n", prev, cur);
-  }
-  prev->next = p;
-  p->next = cur;
-  p->status = READY;
-  printQueue(queue);
-  myprintf("p->status(pid:%d) = READY\n", p->pid);
-  return 1;
 }
 // remove a PROC with the highest priority (the first one in queue)
 // returns its pointer
 PROC *dequeue (PROC **queue) {
   PROC *p = *queue;
-  myprintf("dequeue()\n");
+  //myprintf("dequeue()\n");
   //myprintf("queue->pid = %d\n", (*queue)->pid);
   //printProc(freeList);
   if(*queue) {
     *queue = (*queue)->next;
   }
-  printProc(p);
+  p->next = NULL;
+  //  printProc(p);
   return p;
 }
 
@@ -134,9 +136,9 @@ PROC *kfork() // create a child process, begin from body()
   PROC *p = 0;
   
   p = get_proc(&freeList);
-  myprintf("kfork()\n");
-  myprintf("PROCESS RECEIVED:\n");
-  printProc(p);
+  //myprintf("kfork()\n");
+  //myprintf("PROCESS RECEIVED:\n");
+  //printProc(p);
 
   if(!p) {
     printf("no more PROC, kfork() failed\n");
@@ -205,16 +207,14 @@ int init()
        //printProc(p);
    }       
    running = &proc[0];
-   p->status = READY;
-   p->parent = &proc[0];
+   running->status = READY;
+   running->parent = &proc[0];
        
    
    proc[NPROC-1].next = NULL;             // all procs form a linear link list
-   running = &proc[0];                    // P0 is running 
    freeList = &proc[1];
    readyQueue = 0;
 
-   printQueue(freeList, "freeList");
    printQueue(readyQueue, "readyQueue");
    myprintf("init complete\n");
  }
@@ -229,6 +229,7 @@ body()
     myprintf("proc %d running : enter a key[s|q|f] : ", running->pid);
     c = getc();
     myprintf("%c\n", c);
+    printQueue(readyQueue,"");
     switch(c){
     case 's': tswitch();
       break;
