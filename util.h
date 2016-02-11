@@ -6,13 +6,45 @@ typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
+int getint(char *fmt) {
+  int i = 0, len = myStrLen(fmt), sum = 0; 
+  char c = fmt;
 
+  for(;i < len;i++) {
+    if(fmt[i] > 9) {
+      myprintf("Failed to read integer!\n");
+      return;
+    }
+    else {
+      sum = sum + pow(10,len-i)*fmt[i];
+    }
+  }
+  return sum;
+}
+
+int pow(int base, int power) {
+  if(base == 0)
+    return 0;
+  else if(power == 0)
+    return 1;
+  else
+    return base * pow(base, power-1);
+}
+
+int myStrLen(char *fmt) {
+  if(fmt)
+    return 1 + myStrLen(fmt + 1);
+  else
+    return 0;
+}
 
 void myprints(char *fmt) {
-  while(*fmt){
-    putc(*fmt);
-    *fmt++;
+  if(fmt[0]) {
+    putc(fmt);
+    myprints(fmt+1);
   }
+  else
+    return;
 }
 
 int rpu (u16 x) {
