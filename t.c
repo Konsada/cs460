@@ -14,12 +14,15 @@ typedef struct proc{
   int    ppid;                // add pid for identify the proc
   struct proc   *parent;
   int    kstack[SSIZE];      // proc stack area
+  int event;
+  int exitCode;
 }PROC;
 
 int  procSize = sizeof(PROC);
-
+int nproc = 0;
 PROC proc[NPROC], *running, *freeList, *readyQueue;    // define NPROC procs
 extern int color;
+char* string[30];
 
 enqueue(); 
 PROC *dequeue (PROC **queue);
@@ -29,7 +32,7 @@ kwakeup(int event);
 kexit(int exitValue);
 kwait(int *status); 
 do_tswitch();
-do_kfork();
+int do_kfork();
 do_exit();
 do_sleep();
 do_wakeup();
@@ -39,40 +42,114 @@ do_tswitch(){
   tswitch();
 }
 
-do_kfork(){
+int do_kfork(){
+  PROC *child, *p;
   child = kfork();
-  if(child)
+  if(child){
     myprintf("Successfully forked %d\n", child->pid);
+    return p->pid;
+  }
   else
     myprintf("Failed fork\n");
+  return -1;
 }
 
 do_exit(){
-
-  myprintf("Please enter an event value: \n");
-  getint(stdin);
-  running->status = ZOMBIE;
-  tswitch();
-  exit();
+  int exit = 0;
+  myprintf("Please enter an exit value: \n");
+  if(exit = getint()){
+    running->status = ZOMBIE;
+    tswitch();
+    kexit();
+  }
+  else
+    myprintf("Exit value not recognized!\n");
+  return;
 }
 do_sleep(){
-
+  int event = 0;
+  myprintf("Please enter an event value: \n");
+  if(event =  getint())
+    ksleep(event);
+  else
+    myprintf("Event not recognized!\n");
+  return;
 }
 do_wakeup(){
+  int event = 0;
+  myprintf("Please enter an event value: \n");
+  if(event =  getint())
+    kwakeup(event);
+  else
+    myprintf("Event not recognized!\n");
+  return;
 
 }
 do_wait(){
-
+  int pid, status;
+  pid = kwait(&status);
+  myprintf("waiting [pid: %d | status %d]\n", pid, status);
 }
 
 ksleep(int event){
-
+  running->event = event;
+  running->status = SLEEP;
+  tswitch();
 }
 kwakeup(int event){
+  int i = 0;
+  for(i = 0; i < NPROC; i++) {
+    if(proc[i].status == SLEEP && proc[i].event == event) {
+      proc[i].event = 0;
+      proc[i].status = READY;
+      eunqueue(runningQueue, proc[i]);
+    }
+  }
 }
 kexit(int exitValue){
+  int i, wakeupP1 = 0;
+  PROC *p;
+  if (running->pid == 1){
+    myprintf("other procs still exist, P1 can't die yet!\n");
+    return -1;
+  }
+  for(i = 1; i < NPROC; i++) {
+    p = &proc[i];
+    if (p->status != FREE && p->ppid == running->pid) {
+      p->ppid = 1;
+      p->parent = &proc[1];
+      wakeupP1++;
+    }
+  }
+  running->exitCode = exitValue;
+  running->status = ZOMBIE;
+  /* wakeup parent and also P1 if necessary */
+  kwakeup(running->parent);
+  if(wakeupP1)
+    kwakeup(&proc[1]);
+  tswitch();
 }
+
 kwait(int *status){
+  int i = 0, hasChild = 0 ;
+  PROC *p;
+  while(1){
+    for(i = 1; i < NPROC; i++) {
+      p = &proc[i];
+      if(p->status != FREE && p->ppid == running->pid) {
+	hasChild = 1;
+	if(p->status == ZOMBIE){
+	  *status = p->exitCode;
+	  p->status = FREE;
+	  put_proc(&freeList, p);
+	  nproc--;
+	  return(p->pid);
+	}
+      }
+    }
+    if(!hasChild) return -1;
+    ksleep(running);
+  }
 }
 
 

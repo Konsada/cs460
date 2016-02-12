@@ -6,12 +6,34 @@ typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
+void myprintf(char *fmt, ...);
+
+char *gets(){
+  char string[256] = {'\0'};  
+  char c;
+  int i = 0;
+  c = getc();
+  for(i = 0; i < 256 && c != \r && c; i++){
+    if(c == 8){ // backspace
+      if(i > 0)
+	i--;
+      else
+	i = 0;
+    }
+    else{
+      string[i] = c;
+    }
+    c = getc(); 
+  }
+  myprintf("string too long!\n");
+}
+
 int getint(char *fmt) {
   int i = 0, len = myStrLen(fmt), sum = 0; 
   char c = fmt;
 
   for(;i < len;i++) {
-    if(fmt[i] > 9) {
+    if(fmt[i] < 48 && fmt[i] > 57) {
       myprintf("Failed to read integer!\n");
       return;
     }
