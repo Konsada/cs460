@@ -24,15 +24,16 @@ PROC proc[NPROC], *running, *freeList, *readyQueue;    // define NPROC procs
 extern int color;
 char* string[30];
 
-enqueue(); 
+int enqueue(); 
 PROC *dequeue (PROC **queue);
-body();
+int body();
 ksleep(int event);
 kwakeup(int event);
 kexit(int exitValue);
 kwait(int *status); 
 do_tswitch();
 int do_kfork();
+PROC *kfork();
 do_exit();
 do_sleep();
 do_wakeup();
@@ -130,7 +131,7 @@ kexit(int exitValue){
   tswitch();
 }
 
-kwait(int *status){
+int kwait(int *status){
   int i = 0, hasChild = 0 ;
   PROC *p;
   while(1){
@@ -348,7 +349,7 @@ int init()
    myprintf("init complete\n");
  }
 
-body()
+int body()
 { 
   PROC *child = 0;
   char c = '\0';

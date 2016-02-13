@@ -9,11 +9,11 @@ u16 BASE = 10;
 void myprintf(char *fmt, ...);
 
 char *gets(){
-  char string[256] = {'\0'};  
+  char string[256];  
   char c;
   int i = 0;
   c = getc();
-  for(i = 0; i < 256 && c != \r && c; i++){
+  for(i = 0; i < 256 && c != '\r' && c; i++){
     if(c == 8){ // backspace
       if(i > 0)
 	i--;
