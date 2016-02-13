@@ -102,7 +102,7 @@ kwakeup(int event){
     if(proc[i].status == SLEEP && proc[i].event == event) {
       proc[i].event = 0;
       proc[i].status = READY;
-      eunqueue(runningQueue, proc[i]);
+      eunqueue(&readyQueue, proc[i]);
     }
   }
 }
