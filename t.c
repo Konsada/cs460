@@ -27,19 +27,19 @@ char* string[30];
 int enqueue(); 
 PROC *dequeue (PROC **queue);
 int body();
-ksleep(int event);
-kwakeup(int event);
-kexit(int exitValue);
-kwait(int *status); 
-do_tswitch();
+void ksleep(int event);
+void kwakeup(int event);
+int kexit(int exitValue);
+int kwait(int *status); 
+void do_tswitch();
 int do_kfork();
 PROC *kfork();
-do_exit();
-do_sleep();
-do_wakeup();
-do_wait();
+void do_exit();
+void do_sleep();
+void do_wakeup();
+void do_wait();
 
-do_tswitch(){
+void do_tswitch(){
   tswitch();
 }
 
@@ -55,7 +55,7 @@ int do_kfork(){
   return -1;
 }
 
-do_exit(){
+void do_exit(){
   int exit = 0;
   myprintf("Please enter an exit value: \n");
   if(exit = getint()){
@@ -67,7 +67,7 @@ do_exit(){
     myprintf("Exit value not recognized!\n");
   return;
 }
-do_sleep(){
+void do_sleep(){
   int event = 0;
   myprintf("Please enter an event value: \n");
   if(event =  getint())
@@ -76,7 +76,7 @@ do_sleep(){
     myprintf("Event not recognized!\n");
   return;
 }
-do_wakeup(){
+void do_wakeup(){
   int event = 0;
   myprintf("Please enter an event value: \n");
   if(event =  getint())
@@ -86,28 +86,28 @@ do_wakeup(){
   return;
 
 }
-do_wait(){
+void do_wait(){
   int pid, status;
   pid = kwait(&status);
   myprintf("waiting [pid: %d | status %d]\n", pid, status);
 }
 
-ksleep(int event){
+void ksleep(int event){
   running->event = event;
   running->status = SLEEP;
   tswitch();
 }
-kwakeup(int event){
+void kwakeup(int event){
   int i = 0;
   for(i = 0; i < NPROC; i++) {
     if(proc[i].status == SLEEP && proc[i].event == event) {
       proc[i].event = 0;
       proc[i].status = READY;
-      eunqueue(&readyQueue, proc[i]);
+      enqueue(&readyQueue, proc[i]);
     }
   }
 }
-kexit(int exitValue){
+int kexit(int exitValue){
   int i, wakeupP1 = 0;
   PROC *p;
   if (running->pid == 1){
