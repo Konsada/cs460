@@ -20,7 +20,7 @@ typedef struct proc{
 
 int  procSize = sizeof(PROC);
 int nproc = 0;
-PROC proc[NPROC], *running, *freeList, *readyQueue;    // define NPROC procs
+PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList;    // define NPROC procs
 extern int color;
 char* string[30];
 
@@ -109,6 +109,7 @@ void kwakeup(int event){
     }
   }
 }
+
 int kexit(int exitValue){
   int i, wakeupP1 = 0;
   PROC *p;
@@ -158,7 +159,7 @@ int kwait(int *status){
 
 int scheduler()
 {
-  printQueue(readyQueue, "readyQueue");
+
   //  printf("running status %d", running->status);
   if (running->status == READY){
     enqueue(&readyQueue, running);
@@ -202,24 +203,31 @@ int enqueue(PROC **queue, PROC *p) {
 
   //myprintf("enqueue() priority = %d\n", p->priority);
 
-  prev = *queue;
+  cur = prev  = *queue;
   // myprintf("prev = %x\n", prev);
 
   // readyQueue is empty
-  if(!prev){
+  if(!cur){
     *queue = p;
     p->next = NULL;
     return 1;
   }
   // readyQueue is NOT empty
-  else{
-    while(prev->priority >= p->priority && prev->next) {
-      prev = prev->next;
+  while(p->priority <= cur->priority){
+    if(cur->next){
+      prev = cur;
+      cur = cur->next;
     }
-    p->next = prev->next;
-    prev->next = p;
-    return 1;
+    else{
+      prev->next = p;
+      p->next = NULL;
+      return 0;
+    }
   }
+  prev->next = p;
+  p->next = cur;
+  return 0;
+
 }
 // remove a PROC with the highest priority (the first one in queue)
 // returns its pointer
@@ -249,19 +257,41 @@ int exit(){
 
 int printQueues() {
   PROC *p = 0;
+  int i;
+  for(i = 0; i < 40; i++) {
+    myprintf("-");
+  }
+  myprintf("\n");
   myprintf("freelist    = ");
   p = freeList;
+  //print freeList
   while(p) {
-    myprintf("%d ->", p->pid);
-    p++;
+    myprintf(" %d ->", p->pid);
+    p = p->next;
   }
-  myprintf(" NULL");
-  p = 0;
-  p = readyQueue;
+  myprintf(" NULL\n");
 
+  p = readyQueue;
+  myprintf("readyQueue  = ");
+  //print readyQueue
   while(p) {
-    myprintf("%d [%d ] ->",
+    myprintf(" %d [%d ] ->",p->pid, p->priority);
+    p = p->next;
   }
+  myprintf(" NULL\n");
+
+  p = sleepList;
+  myprintf("sleepList   =");
+  //print sleepList
+  while(p) {
+    myprintf(" %d [ e=%d ] ->",p->pid, p->event);
+    p = p->next;
+  }
+  myprintf(" NULL\n");
+  for(i = 0; i < 40; i++) {
+    myprintf("-");
+  }
+  myprintf("\n");
 } 
 
 int printQueue(PROC *queue, char *queueName) {
@@ -283,7 +313,7 @@ PROC *kfork() // create a child process, begin from body()
 {
   int i;
   PROC *p = 0;
-  
+
   p = get_proc(&freeList);
   //myprintf("kfork()\n");
   //myprintf("PROCESS RECEIVED:\n");
@@ -304,11 +334,9 @@ PROC *kfork() // create a child process, begin from body()
     p->kstack[SSIZE - i] = 0; 
 
   p->kstack[SSIZE-1] = (int)body; // resume point = address of body()
-  printQueue(freeList, "freeList");
   p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
   enqueue(&readyQueue, p);        // enter p into readyQueue by priority
 
-  myprintf("exit kfork()\n");
   return p;
 }
 
@@ -335,7 +363,7 @@ int init()
 {
    PROC *p;
    int i, j;
-   myprintf("intit()\n");
+   myprintf("init ...");
    /* initialize all proc's */
    for (i=0; i<NPROC; i++){
        p = &proc[i];
@@ -365,8 +393,7 @@ int init()
    freeList = &proc[1];
    readyQueue = 0;
 
-   printQueue(readyQueue, "readyQueue");
-   myprintf("init complete\n");
+   myprintf("done\n");
  }
 
 int body()
@@ -374,26 +401,36 @@ int body()
   PROC *child = 0;
   char c = '\0';
   myprintf("proc %d resumes to body()\n", running->pid);
+  printQueues();
   while(c != 'q'){
     color = running->pid + 7;
-    myprintf("proc %d running : enter a key[s|q|f|z|a|w] : ", running->pid);
+    myprintf("proc %d [%d ] running: parent=%d\n",running->pid,running->priority, running->parent);
+    myprintf("enter a char [s|q|f z|a|w] : ");
     c = getc();
     myprintf("%c\n", c);
     //    printQueue(readyQueue,"");
     switch(c){
-    case 's': do_tswitch();
+    case 's': 
+      myprintf("proc %d tswitch()\n", running->pid);
+      do_tswitch();
+      myprintf("proc %d resumes\n", running->pid);
       break;
     case 'q': 
       do_exit();
       break;
     case 'f': 
+      myprintf("proc %d kfork a child\n", running->pid);
+      myprintf("child pid = %d\n", readyQueue->pid);
       do_kfork();
       break;
     case 'z' :
+      do_sleep();
       break;
     case 'a' :
+      do_wakeup();
       break;
     case 'w' :
+      do_wait();
       break;
     }
   }
@@ -403,7 +440,9 @@ int main()
 {
   myprintf("MTX starts in main()\n");
   init();
+  myprintf("P%d running\n", running->pid);
   kfork();
+  myprintf("P%d switch process\n", running->pid);
   tswitch();
   body();
 }
