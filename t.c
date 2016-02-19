@@ -67,6 +67,7 @@ void do_exit(){
     myprintf("Exit value not recognized!\n");
   return;
 }
+
 void do_sleep(){
   int event = 0;
   myprintf("Please enter an event value: \n");
@@ -76,6 +77,7 @@ void do_sleep(){
     myprintf("Event not recognized!\n");
   return;
 }
+
 void do_wakeup(){
   int event = 0;
   myprintf("Please enter an event value: \n");
@@ -244,9 +246,27 @@ int exit(){
   }
   return 0;
 }
+
+int printQueues() {
+  PROC *p = 0;
+  myprintf("freelist    = ");
+  p = freeList;
+  while(p) {
+    myprintf("%d ->", p->pid);
+    p++;
+  }
+  myprintf(" NULL");
+  p = 0;
+  p = readyQueue;
+
+  while(p) {
+    myprintf("%d [%d ] ->",
+  }
+} 
+
 int printQueue(PROC *queue, char *queueName) {
   PROC *p = 0;
-  //  myprintf("printQueue(%s)\n", queueName);
+  myprintf("%s = ", queueName);
   p = queue;
   if(!p){
     myprintf("Queue is empty!\n");

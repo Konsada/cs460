@@ -7,6 +7,21 @@ char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
 void myprintf(char *fmt, ...);
+int mystrcmp(char *s1, char *s2);
+
+// < 0 if s1 is less than s2 and > 0 if s1 is less than s2
+int mystrcmp(char *s1, char *s2){
+  int i = 0;
+  while(s1[i] && s2[i]){
+    if(!(s1[i] - s2[i])) {
+      i++;
+    }
+    else
+      return s1[i] - s2[i];
+  }
+  return 0;
+}
+
 
 char *gets(){
   char string[256];  
@@ -28,6 +43,7 @@ char *gets(){
   myprintf("string too long!\n");
 }
 
+
 int getint(char *fmt) {
   int i = 0, len = myStrLen(fmt), sum = 0; 
   char c = fmt;
@@ -44,6 +60,7 @@ int getint(char *fmt) {
   return sum;
 }
 
+
 int pow(int base, int power) {
   if(base == 0)
     return 0;
@@ -53,12 +70,14 @@ int pow(int base, int power) {
     return base * pow(base, power-1);
 }
 
+
 int myStrLen(char *fmt) {
   if(fmt)
     return 1 + myStrLen(fmt + 1);
   else
     return 0;
 }
+
 
 void myprints(char *fmt) {
   if(fmt[0]) {
@@ -78,6 +97,8 @@ int rpu (u16 x) {
     putc(c);
   }
 }
+
+
 void myprintu(u16 x) {
 
   if(x)
@@ -86,6 +107,7 @@ void myprintu(u16 x) {
     putc('0');
   putc(' ');
 }
+
 
 void myprintd(int x) {
 
@@ -99,6 +121,7 @@ void myprintd(int x) {
     putc('0');
 }
 
+
 void myprintx(u16 x) {
   BASE = 16;
   putc('0');
@@ -106,6 +129,7 @@ void myprintx(u16 x) {
   rpu((u16)x);
   BASE = 10;
 }
+
 
 void printl(u16 x) {
   if(x)
