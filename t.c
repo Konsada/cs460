@@ -47,7 +47,6 @@ int do_kfork(){
   PROC *child, *p;
   child = kfork();
   if(child){
-    myprintf("Successfully forked %d\n", child->pid);
     return p->pid;
   }
   else
@@ -71,7 +70,9 @@ void do_exit(){
 void do_sleep(){
   int event = 0;
   myprintf("Please enter an event value: \n");
-  if(event =  getint())
+
+  event = getint(gets());
+  if(event)
     ksleep(event);
   else
     myprintf("Event not recognized!\n");
@@ -80,11 +81,20 @@ void do_sleep(){
 
 void do_wakeup(){
   int event = 0;
+  char *input;
+
   myprintf("Please enter an event value: \n");
-  if(event =  getint())
+
+  input = gets();
+  event = getint(input);
+
+  if(event){
     kwakeup(event);
-  else
+  }
+  else{
+    myprintf("event: %d\n", event);
     myprintf("Event not recognized!\n");
+  }
   return;
 
 }
@@ -101,7 +111,10 @@ void ksleep(int event){
 }
 void kwakeup(int event){
   int i = 0;
-  for(i = 0; i < NPROC; i++) {
+
+
+  for(i = 1; i < NPROC; i++) {
+
     if(proc[i].status == SLEEP && proc[i].event == event) {
       proc[i].event = 0;
       proc[i].status = READY;
@@ -199,36 +212,32 @@ int put_proc(PROC **list, PROC *p) {
 
 // linear queue with running proc in the highest priority 
 int enqueue(PROC **queue, PROC *p) {
-  PROC *prev, *cur;
+  PROC *temp;
 
-  //myprintf("enqueue() priority = %d\n", p->priority);
+  temp = *queue;
 
-  cur = prev  = *queue;
-  // myprintf("prev = %x\n", prev);
-
-  // readyQueue is empty
-  if(!cur){
+  //empty queue
+  if(!temp) {
     *queue = p;
     p->next = NULL;
-    return 1;
+    return 0;
   }
-  // readyQueue is NOT empty
-  while(p->priority <= cur->priority){
-    if(cur->next){
-      prev = cur;
-      cur = cur->next;
-    }
-    else{
-      prev->next = p;
-      p->next = NULL;
+  //queue has only one element
+  if(!temp->next) {
+    if(temp->priority < p->priority) {
+      p->next = temp;
+      *queue = p;
       return 0;
     }
   }
-  prev->next = p;
-  p->next = cur;
+  while(temp->next && temp->next->priority >= p->priority) {
+    temp = temp->next; 
+  }
+  p->next = temp->next;
+  temp->next = p;
   return 0;
-
 }
+
 // remove a PROC with the highest priority (the first one in queue)
 // returns its pointer
 PROC *dequeue (PROC **queue) {
@@ -363,6 +372,9 @@ int init()
 {
    PROC *p;
    int i, j;
+
+   running = freeList = readyQueue = sleepList = 0;
+
    myprintf("init ...");
    /* initialize all proc's */
    for (i=0; i<NPROC; i++){
@@ -394,21 +406,23 @@ int init()
    readyQueue = 0;
 
    myprintf("done\n");
+
  }
 
 int body()
 { 
   PROC *child = 0;
   char c = '\0';
+  
   myprintf("proc %d resumes to body()\n", running->pid);
-  printQueues();
-  while(c != 'q'){
-    color = running->pid + 7;
-    myprintf("proc %d [%d ] running: parent=%d\n",running->pid,running->priority, running->parent);
+  while(1){
+    color = running->pid + 10;
+    printQueues();
+    myprintf("proc %d [%d ] running: parent=%d\n",running->pid,running->priority, running->parent->pid);
     myprintf("enter a char [s|q|f z|a|w] : ");
     c = getc();
     myprintf("%c\n", c);
-    //    printQueue(readyQueue,"");
+
     switch(c){
     case 's': 
       myprintf("proc %d tswitch()\n", running->pid);
@@ -420,7 +434,7 @@ int body()
       break;
     case 'f': 
       myprintf("proc %d kfork a child\n", running->pid);
-      myprintf("child pid = %d\n", readyQueue->pid);
+      myprintf("child pid = %d\n", freeList->pid);
       do_kfork();
       break;
     case 'z' :

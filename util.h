@@ -27,8 +27,13 @@ char *gets(){
   char string[256];  
   char c;
   int i = 0;
-  c = getc();
+
+  myprintf("gets()\n");
+  for(i = 0; i < 256; i++) {
+    string[i] = 0;
+  }
   for(i = 0; i < 256 && c != '\r' && c; i++){
+    c = getc();
     if(c == 8){ // backspace
       if(i > 0)
 	i--;
@@ -37,8 +42,8 @@ char *gets(){
     }
     else{
       string[i] = c;
-    }
-    c = getc(); 
+      myprintf("string: %s\n", string);
+    } 
   }
   myprintf("string too long!\n");
 }
@@ -48,13 +53,13 @@ int getint(char *fmt) {
   int i = 0, len = myStrLen(fmt), sum = 0; 
   char c = fmt;
 
-  for(;i < len;i++) {
+  for(i = 0;i < len;i++) {
     if(fmt[i] < 48 && fmt[i] > 57) {
       myprintf("Failed to read integer!\n");
       return;
     }
     else {
-      sum = sum + pow(10,len-i)*fmt[i];
+      sum = sum + pow(10,len-i)*(fmt[i] - 48);
     }
   }
   return sum;
