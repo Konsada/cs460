@@ -14,5 +14,7 @@ sudo rm /mnt/boot/*
 sudo cp mtx /mnt/boot/
 sudo umount /mnt
 
+echo ready?
+
 qemu-system-i386 -fda FDimage -no-fd-bootchk
 

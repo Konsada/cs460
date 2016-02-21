@@ -20,7 +20,7 @@ typedef struct proc{
 
 int  procSize = sizeof(PROC);
 int nproc = 0;
-PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList;    // define NPROC procs
+PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;    // define NPROC procs
 extern int color;
 char* string[30];
 
@@ -69,9 +69,13 @@ void do_exit(){
 
 void do_sleep(){
   int event = 0;
-  myprintf("Please enter an event value: \n");
+  char *input;
 
-  event = getint(gets());
+  myprintf("Please enter an event value: ");
+  gets(input);
+  myprintf("\n");
+  event = getint(input);
+
   if(event)
     ksleep(event);
   else
@@ -83,7 +87,7 @@ void do_wakeup(){
   int event = 0;
   char *input;
 
-  myprintf("Please enter an event value: \n");
+  myprintf("Please enter an event value: ");
 
   input = gets();
   event = getint(input);
@@ -107,14 +111,12 @@ void do_wait(){
 void ksleep(int event){
   running->event = event;
   running->status = SLEEP;
+  enqueue(&sleepList, running);
   tswitch();
 }
 void kwakeup(int event){
   int i = 0;
-
-
   for(i = 1; i < NPROC; i++) {
-
     if(proc[i].status == SLEEP && proc[i].event == event) {
       proc[i].event = 0;
       proc[i].status = READY;
@@ -126,6 +128,7 @@ void kwakeup(int event){
 int kexit(int exitValue){
   int i, wakeupP1 = 0;
   PROC *p;
+
   if (running->pid == 1){
     myprintf("other procs still exist, P1 can't die yet!\n");
     return -1;
@@ -138,6 +141,7 @@ int kexit(int exitValue){
       wakeupP1++;
     }
   }
+
   running->exitCode = exitValue;
   running->status = ZOMBIE;
   /* wakeup parent and also P1 if necessary */
@@ -172,19 +176,12 @@ int kwait(int *status){
 
 int scheduler()
 {
-
   //  printf("running status %d", running->status);
   if (running->status == READY){
     enqueue(&readyQueue, running);
     //   myprintf("running->pid: %d enqueued\n", running->pid);
   }
-  else{
-    //    running = dequeue(&readyQueue);
-    put_proc(&readyQueue, running);
-  }
-  //  printQueue(readyQueue, "readyQueue");
   running = dequeue(&readyQueue);
-  //  printQueue(readyQueue, "readyQueue");
 }
 
 // e.g. get_proc(&freeList);
@@ -324,9 +321,6 @@ PROC *kfork() // create a child process, begin from body()
   PROC *p = 0;
 
   p = get_proc(&freeList);
-  //myprintf("kfork()\n");
-  //myprintf("PROCESS RECEIVED:\n");
-  //printProc(p);
 
   if(!p) {
     printf("no more PROC, kfork() failed\n");
@@ -413,7 +407,7 @@ int body()
 { 
   PROC *child = 0;
   char c = '\0';
-  
+  color = running->pid + 10;
   myprintf("proc %d resumes to body()\n", running->pid);
   while(1){
     color = running->pid + 10;

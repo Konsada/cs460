@@ -23,35 +23,53 @@ int mystrcmp(char *s1, char *s2){
 }
 
 
-char *gets(){
+char *myfscanf(){
   char string[256];  
-  char c;
+  char c = '\0';
   int i = 0;
 
   myprintf("gets()\n");
-  for(i = 0; i < 256; i++) {
-    string[i] = 0;
-  }
-  for(i = 0; i < 256 && c != '\r' && c; i++){
+
+  for(i = 0; i < 256 && (c != '\r'); i++){
     c = getc();
+    myprintf("%c entered\n", c);
     if(c == 8){ // backspace
       if(i > 0)
 	i--;
       else
 	i = 0;
     }
+    // character entered
     else{
       string[i] = c;
+      string[i+1] = '\0';
       myprintf("string: %s\n", string);
     } 
+    if(c == '\r');
+    {
+      string[i] = '\n';
+      return string;
+    }
   }
   myprintf("string too long!\n");
+  return 0;
 }
 
 
+int gets(char *s) {
+
+  while((*s = getc()) != '\r') {
+    putc(*s++);
+  }
+  *s=0;
+}
+
 int getint(char *fmt) {
-  int i = 0, len = myStrLen(fmt), sum = 0; 
-  char c = fmt;
+  int i = 0, len = 0, sum = 0; 
+  char c = 0;
+
+  c = fmt;
+  len = myStrLen(fmt);
 
   for(i = 0;i < len;i++) {
     if(fmt[i] < 48 && fmt[i] > 57) {
@@ -59,7 +77,7 @@ int getint(char *fmt) {
       return;
     }
     else {
-      sum = sum + pow(10,len-i)*(fmt[i] - 48);
+      sum = sum + pow(10,(len-1)-i)*(fmt[i] - 48);
     }
   }
   return sum;
@@ -77,20 +95,22 @@ int pow(int base, int power) {
 
 
 int myStrLen(char *fmt) {
-  if(fmt)
-    return 1 + myStrLen(fmt + 1);
-  else
-    return 0;
+  int i;
+  while(fmt[i]) {
+    i++;
+  }
+  return i;
 }
 
 
 void myprints(char *fmt) {
-  if(fmt[0]) {
-    putc(fmt);
-    myprints(fmt+1);
+  char *c;
+  c = fmt;
+  while(*c) {
+    putc(*c);
+    c++;
   }
-  else
-    return;
+  return;
 }
 
 int rpu (u16 x) {
@@ -149,12 +169,14 @@ void printX(u16 x) {
   putc('x');
   rpu(x);
   BASE = 10;
+
 }
 
 void myprintf(char *fmt, ...){
   char *cp = fmt;
   u16 *ip = (u16 *)&fmt+1;
   u16 *up;
+
   while(*cp){
     if(*cp != '%'){
       putc(*cp);
@@ -166,7 +188,7 @@ void myprintf(char *fmt, ...){
     cp++;
     switch(*cp) {
     case 'c' : putc((char)*ip); break;
-    case 's' : myprints((char *)*ip); break;
+    case 's' : myprints(*ip); break;
     case 'u' : myprintu(*ip); break;
     case 'd' : myprintd(*ip); break;
     case 'x' : myprintx(*ip); break;
@@ -174,4 +196,5 @@ void myprintf(char *fmt, ...){
     cp++; ip++;
   }
 }
+
 #endif
