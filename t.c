@@ -23,6 +23,7 @@ int nproc = 0;
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;    // define NPROC procs
 extern int color;
 char* string[30];
+int  rflag = 0;
 
 int enqueue(); 
 PROC *dequeue (PROC **queue);
@@ -76,7 +77,7 @@ void do_sleep(){
   int event = 0;
   char *input;
 
-  myprintf("Please enter an event value: ");
+  myprintf("Please enter an event value to sleep on: ");
   gets(input);
   myprintf("\ngets(%s) complete\n", input);
   event = getint(input);
@@ -93,13 +94,16 @@ void do_wakeup(){
   int event = 0;
   char *input;
 
-  myprintf("Please enter an event value: ");
+  myprintf("Please enter an event value to wake up: ");
+  gets(input);
+  myprintf("\ngets(%s) complete\n", input);
+  event = getint(input);
+  myprintf("%d = getint(%s)\n", event, input);
 
-  if((event = getint((gets(input))))){
+  if(event){
     kwakeup(event);
   }
   else{
-    myprintf("event: %d\n", event);
     myprintf("Event not recognized!\n");
   }
   return;
@@ -115,17 +119,24 @@ void ksleep(int event){
   running->event = event;
   running->status = SLEEP;
   enqueue(&sleepList, running);
+  reschedule();
   tswitch();
 }
 void kwakeup(int event){
   int i = 0;
+  PROC *p;
   for(i = 1; i < NPROC; i++) {
-    if(proc[i].status == SLEEP && proc[i].event == event) {
-      proc[i].event = 0;
-      proc[i].status = READY;
-      enqueue(&readyQueue, proc[i]);
+    p = &proc[i];
+    myprintf("%d[status:%p,event:%d ] -> ", p->pid, p->status, p->event);
+    getc();
+    if(p->status == SLEEP && p->event == event) {
+      p->event = 0;
+      p->status = READY;
+      enqueue(&readyQueue, p);
+      myprintf("pid: %d enqueued!\n", p->pid);
     }
   }
+  reschedule();
 }
 
 int kexit(int exitValue){
@@ -178,13 +189,23 @@ int kwait(int *status){
 
 }
 
-
+int reschedule() {
+  PROC *p, *tempQ = 0;
+  while((p = dequeue(&readyQueue))) {
+    enqueue(&tempQ, p);
+  }
+  readyQueue = tempQ;
+  rflag = 0;
+  if(running->priority < readyQueue->priority)
+    rflag = 1;
+}
 int scheduler()
 {
   if (running->status == READY){
     enqueue(&readyQueue, running);
   }
   running = dequeue(&readyQueue);
+  rflag = 0;
 }
 
 // e.g. get_proc(&freeList);
@@ -227,6 +248,11 @@ int enqueue(PROC **queue, PROC *p) {
     if(temp->priority < p->priority) {
       p->next = temp;
       *queue = p;
+      return 0;
+    }
+    else {
+      temp->next = p;
+      p->next = NULL;
       return 0;
     }
   }

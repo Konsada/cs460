@@ -94,10 +94,9 @@ int pow(int base, int power) {
 
 
 int myStrLen(char *fmt) {
-  int i;
-
-  while(fmt[i]) {
-    myprintf("%c[i],",fmt[i]);
+  int i = 0;
+  while(*fmt++) {
+    myprintf("%c[%d],",*fmt, i);
     i++;
   }
   putc('\n');
@@ -157,7 +156,16 @@ void myprintx(u16 x) {
   BASE = 10;
 }
 
-
+void myprintp(u16 x) {
+  switch(x){
+  case 0 : myprintf("FREE"); break;
+  case 1 : myprintf("READY"); break;
+  case 2 : myprintf("SLEEP"); break;
+  case 3 : myprintf("BLOCK"); break;
+  case 4 : myprintf("ZOMBIE"); break;
+  default : myprintf(" ");
+  }
+}
 void printl(u16 x) {
   if(x)
     rpu(x);
@@ -194,6 +202,7 @@ void myprintf(char *fmt, ...){
     case 'u' : myprintu(*ip); break;
     case 'd' : myprintd(*ip); break;
     case 'x' : myprintx(*ip); break;
+    case 'p' : myprintp(*ip); break;
     }
     cp++; ip++;
   }
