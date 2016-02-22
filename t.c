@@ -55,12 +55,17 @@ int do_kfork(){
 }
 
 void do_exit(){
-  int exit = 0;
-  myprintf("Please enter an exit value: \n");
-  if(exit = getint()){
-    running->status = ZOMBIE;
-    tswitch();
-    kexit();
+  int exitValue = 0;
+  char *input;
+
+  myprintf("Please enter an exitValue: ");
+  gets(input);
+  myprintf("\ngets(%s) complete\n", input);
+  exitValue = getint(input);
+  myprintf("%d = getint(%x) complete\n", exitValue, input);
+
+  if(exitValue){
+    kexit(exitValue);
   }
   else
     myprintf("Exit value not recognized!\n");
@@ -73,8 +78,9 @@ void do_sleep(){
 
   myprintf("Please enter an event value: ");
   gets(input);
-  myprintf("\n");
+  myprintf("\ngets(%s) complete\n", input);
   event = getint(input);
+  myprintf("%d = getint(%s)\n", event, input);
 
   if(event)
     ksleep(event);
@@ -89,10 +95,7 @@ void do_wakeup(){
 
   myprintf("Please enter an event value: ");
 
-  input = gets();
-  event = getint(input);
-
-  if(event){
+  if((event = getint((gets(input))))){
     kwakeup(event);
   }
   else{
@@ -128,7 +131,7 @@ void kwakeup(int event){
 int kexit(int exitValue){
   int i, wakeupP1 = 0;
   PROC *p;
-
+  myprintf("exitValue = %d\n", exitValue);
   if (running->pid == 1){
     myprintf("other procs still exist, P1 can't die yet!\n");
     return -1;
@@ -154,6 +157,7 @@ int kexit(int exitValue){
 int kwait(int *status){
   int i = 0, hasChild = 0 ;
   PROC *p;
+
   while(1){
     for(i = 1; i < NPROC; i++) {
       p = &proc[i];
@@ -171,15 +175,14 @@ int kwait(int *status){
     if(!hasChild) return -1;
     ksleep(running);
   }
+
 }
 
 
 int scheduler()
 {
-  //  printf("running status %d", running->status);
   if (running->status == READY){
     enqueue(&readyQueue, running);
-    //   myprintf("running->pid: %d enqueued\n", running->pid);
   }
   running = dequeue(&readyQueue);
 }
