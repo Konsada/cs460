@@ -3,6 +3,8 @@
 
 typedef unsigned char u8;
 typedef unsigned int u16;
+typedef unsigned long u32;
+
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 u16 nameCount = 0;
@@ -13,109 +15,7 @@ char buf[1024];
 void myprintf(char *fmt, ...);
 int mystrcmp(char *s1, char *s2);
 int strtok(char *path);
-int search(MINODE *mip, char *name, int dev);
-u16 search(INODE *ip, char *name);
-
-u16 search(INODE *ip, char *name) {
-  int i; char c; DIR *dp;
-
-  for(i = 0; i < 12; i++) {
-    if((u16)ip->i_block[i]) {
-      getblk((u16)ip->i_block[i], b2);
-      dp = (DIR *)buf;
-
-      while ((char *)dp < &buf[1024]) {
-	c = dp->name[dp->name_len];
-	dp->name[dp->name_len] = 0;
-
-	if(strcmp(dp->name, name) == 0) {
-	  return ((u16)dp->inode);
-	}
-	dp->name[dp->name_len] = c;
-	dp = (char *)dp + dp->rec_len;
-      }
-    }
-  }
-  return 0;
-}
-
-int search(MINODE *mip, char *name, int dev) {
-  int i, *iblk, *diblk;
-  char buf[BLOCK_SIZE], *cp, ibuf[BLOCK_SIZE], dibuf[BLOCK_SIZE], *temp;
-  char *bp, *dbp;
-  if(DEBUG) printf("DEBUG: search()\n");
-  get_block(dev, mip->inode.i_block[0], buf); 
-  // search direct blocks
-  if(DEBUG) printf("DEBUG: mip->inode.i_blocks: %u\n", mip->inode.i_blocks);
-  for(i = 0; i < mip->inode.i_block[i]; i++) {
-    get_block(dev, mip->inode.i_block[i], buf);    
-    cp = buf;
-    dp = (DIR *)buf;
-    while(cp < buf + BLOCK_SIZE) {
-      temp = (char *)calloc(257,0);
-      strncpy(temp, dp->name, dp->name_len);
-      temp[dp->name_len] = 0;
-      if(DEBUG) printf("DEBUG: ...Searching...\n");
-      if(DEBUG) printf("DEBUG: dp->name: %s dp->inode: %u dp->rec_len: %u\n", temp, dp->inode, dp->rec_len);
-      if(!strncmp(dp->name, name, dp->name_len)){
-	temp = (char *)calloc(64,0);
-	strncpy(temp,dp->name,dp->name_len);
-	if(DEBUG) printf("DEBUG: %s found, returning ino: %d.\n", temp,dp->inode);
-	return dp->inode;
-      }
-      cp += dp->rec_len;
-      dp = (DIR *)cp;
-    }
-  }
-  /***********************************************
-   !!!NEED TO IMPLEMENT INDIRECT SEARCH AS WELL!!!
-  ***********************************************/
-  // search single indirect blocks
-  if(mip->inode.i_blocks >= 12) {
-    get_block(dev, mip->inode.i_block[12], ibuf);
-    bp = ibuf;
-  if(DEBUG) printf("DEBUG: implementing single indirect search for %s\n", name);
-    //while bp doesn't pass the indirectbuffer end point
-    while(bp < ibuf + BLOCK_SIZE) {    
-      get_block(dev, *bp, buf); // get this block into buf
-      cp = buf;
-      dp = (DIR *)cp;
-      while(cp < buf + BLOCK_SIZE) {
-	if(!strncmp(dp->name, name, dp->name_len))return dp->inode;
-	cp += dp->rec_len;
-	dp = (DIR *)cp;
-      }
-      bp += sizeof(u32); // increment 1024 / 256 = 4bytes || 32bits
-    }
-  }
-  if(mip->inode.i_blocks >= 13){
-    // search double indirect blocks
-    get_block(dev, mip->inode.i_block[13], dibuf);
-    dbp = dibuf;
-    if(DEBUG) printf("DEBUG: implementing double indirect search for %s\n", name);
- 
-    // single indirect block traversal
-    while(dbp < dibuf + BLOCK_SIZE) {
-      get_block(dev, *dbp, ibuf);
-      bp = ibuf;
-      // double indirect block traversal
-      while(bp < ibuf + BLOCK_SIZE) {
-	get_block(dev, *bp, buf);
-	cp = buf;
-	dp = (DIR *)cp;
-	// block traversal
-	while(cp < buf + BLOCK_SIZE) {
-	  if(!strncmp(dp->name, name, dp->name_len))return dp->inode;
-	  cp += dp->rec_len;
-	  dp = (DIR *)cp;
-	}
-	bp += sizeof(32);
-      }
-      dbp += sizeof(u32);
-    }
-  }
-  return 0;
-}
+int mystrcpy(char dest[], char sorce[]);
 
 int strtok(char *path){
   char *cp;
@@ -134,7 +34,12 @@ int strtok(char *path){
     cp++;
   }
 }
-
+int mystrcpy(char dest[], char source[]){
+  int i = 0;
+  while(source[i]) dest[i] = source[i];
+  dest[i] = 0;
+  return 0;
+}
 // < 0 if s1 is less than s2 and > 0 if s1 is less than s2
 int mystrcmp(char *s1, char *s2){
   int i = 0;

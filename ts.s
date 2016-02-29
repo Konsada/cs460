@@ -1,7 +1,7 @@
         OSSEG  = 0x1000
 	
        .globl _main,_running,_scheduler,_proc,_procSize  ! IMPORT
-       .globl _tswitch
+       .globl _tswitch,_inces,_diskr,_setes,_printf
 	
         jmpi   start,OSSEG
 

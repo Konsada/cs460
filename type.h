@@ -26,15 +26,10 @@
 //Permission
 #define FILE_PERMISSION 0x81A4
 
-// Proc status
-#define FREE              0
-#define READY             1
-#define RUNNING           2
-
 // Table sizes
 #define NMINODES         100
 #define NMOUNT            10
-#define NPROC             10
+//#define NPROC             10
 #define NFD               10
 #define NOFT             100
 
@@ -49,16 +44,7 @@
 
 /*
 // define shorter TYPES, save typing efforts
-typedef struct ext2_group_desc {
-  u32 bg_block_bitmap;
-  u32 bg_inode_bitmap;
-  u32 bg_inode_table;
-  u16 bg_free_blocks_count;
-  u16 bg_free_inodes_count;
-  u16 bg_used_dirs_count;
-  u16 bg_pad;
-  u32 bg_reserved[3];
-} GD;
+
 
 typedef struct ext2_super_block{
   u32 s_inodes_count;
@@ -76,31 +62,11 @@ typedef struct ext2_super_block{
   u16 s_mnt_count;
   u16 s_magic;            // 0xEF53
 }SUPER;
+*/
 
-typedef struct ext2_inode {
-  u16 i_mode;
-  u16 i_uid;
-  u32 i_size;
-  u32 i_atime;
-  u32 i_ctime;
-  u32 i_mtime;
-  u32 i_dtime;
-  u16 i_gid;
-  u16 i_links_count;
-  u32 i_blocks;
-  u32 i_flags;
-  u32 reserved;
-  u32 i_block[15];
-  u32 i_pad[7];
-}INODE;
 
-typedef struct ext2_dir_entry_2 {
-  u32 inode;
-  u16 rec_len;
-  u8 name_len;
-  u8 file_type;
-  char name[255];
-} DIR;    // need this for new version of e2fs
+/*
+
 
 // Open File Table
 typedef struct oft{
@@ -145,10 +111,7 @@ typedef struct mount{
 
 typedef enum {false, true} bool;
 
-GD    *gp;
-SUPER *sp;
-INODE *ip;
-DIR   *dp; 
+
 
 
 

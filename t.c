@@ -3,14 +3,16 @@
 
 #define NPROC 9                // number of PROCs
 #define SSIZE 1024             // per proc stack area 
-#define RED 
 #define NULL 0
 
-typedef enum {FREE, READY, SLEEP, BLOCK, ZOMBIE} STATUS;
-/*
+enum STATUS {FREE, READY, SLEEP, BLOCK, ZOMBIE};
+
+
 typedef struct proc{
   struct proc *next;
   int    ksp;               // saved ksp when not running
+  int    uss;
+  int    usp;
   int    status;
   int    priority;
   int    pid;
@@ -20,7 +22,43 @@ typedef struct proc{
   int event;
   int exitCode;
 }PROC;
-*/
+
+typedef struct ext2_group_desc {
+  u32 bg_block_bitmap;
+  u32 bg_inode_bitmap;
+  u32 bg_inode_table;
+  u16 bg_free_blocks_count;
+  u16 bg_free_inodes_count;
+  u16 bg_used_dirs_count;
+  u16 bg_pad;
+  u32 bg_reserved[3];
+} GD;
+
+typedef struct ext2_inode {
+  u16 i_mode;
+  u16 i_uid;
+  u32 i_size;
+  u32 i_atime;
+  u32 i_ctime;
+  u32 i_mtime;
+  u32 i_dtime;
+  u16 i_gid;
+  u16 i_links_count;
+  u32 i_blocks;
+  u32 i_flags;
+  u32 reserved;
+  u32 i_block[15];
+  u32 i_pad[7];
+}INODE;
+
+typedef struct ext2_dir_entry_2 {
+  u32 inode;
+  u16 rec_len;
+  u8 name_len;
+  u8 file_type;
+  char name[255];
+} DIR;    // need this for new version of e2fs
+
 typedef struct head{
   u32 ID_space;              // 0x04100301: combined I&D or 0x04200301: separate I&D
   u32 magic_number;          // 0x00000020
@@ -34,11 +72,17 @@ typedef struct head{
 
 u16 tsize, dsize, bsize, totalSize;
 int  procSize = sizeof(PROC);
-int nproc = 0;
+u16 nproc = 0;
+
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;    // define NPROC procs
 extern int color;
 char* string[30];
 int  rflag = 0;
+
+GD    *gp;
+//SUPER *sp;
+INODE *ip;
+DIR   *dp; 
 
 int enqueue(); 
 PROC *dequeue (PROC **queue);
@@ -58,7 +102,7 @@ int get_block(u16 blk, char *buf);
 int move(u16 segment);
 int clearbss(u16);
 int load(char *filename, u16 segment);
-
+u16 search(INODE *ip, char *name);
 
 
 int load(char *filename, u16 segment){
@@ -66,12 +110,12 @@ int load(char *filename, u16 segment){
   u16 i, curInode;
   HEADER *tempH;
 
-  strcpy(path, filename);
+  mystrcpy(path, filename);
   strtok(path);
 
-  getblk(2, buf);
+  get_block(2, buf);
   gp = (GD*)buf;
-  getblk((u16)gp->bg_inode_table, buf);
+  get_block((u16)gp->bg_inode_table, buf);
   ip = (INODE*)buf + 1;
 
   for(i = 0; i < nameCount; i++) {
@@ -81,12 +125,12 @@ int load(char *filename, u16 segment){
       return -1;
     }
     curInode--;
-    getblk(gp->bg_inode_table + (curInode / 8), buf);
+    get_block(gp->bg_inode_table + (curInode / 8), buf);
     ip = (INODE *)buf + (curInode % 8);
   }
 
   //save header info
-  getblk(ip->i_block[0], buf);
+  get_block(ip->i_block[0], buf);
   tempH = (HEADER *)buf;
   tsize = tempH->tsize;
   dsize = tempH->dsize;
@@ -94,19 +138,19 @@ int load(char *filename, u16 segment){
   totalSize = tempH->total_size;
 
   if(ip->i_block[12])
-    getblk((u16)ip->i_block[12], buf);
+    get_block((u16)ip->i_block[12], buf);
 
   setes(segment);
 
   for(i = 0; i < 12 && ip->i_block[i]; i++){
-    getblk((u16)ip->i_block[i], 0); // load i_block[i]
+    get_block((u16)ip->i_block[i], 0); // load i_block[i]
     inces(); // increment ES by 1K
   }
 
   if((u16)ip->i_block[12]) {
     temp = (u32*)buf;
     while(*temp){
-      getblk((u16)*temp, 0);
+      get_block((u16)*temp, 0);
       inces();
       temp++;
     }
@@ -116,16 +160,39 @@ int load(char *filename, u16 segment){
 
   clearbss(segment);
   setes(0x1000);
-  printf(" done\n");
+  myprintf(" done\n");
   return 1;
+}
+
+u16 search(INODE *ip, char *name) {
+  int i; char c; DIR *dp;
+
+  for(i = 0; i < 12; i++) {
+    if((u16)ip->i_block[i]) {
+      get_block((u16)ip->i_block[i], buf);
+      dp = (DIR *)buf;
+
+      while ((char *)dp < &buf[1024]) {
+	c = dp->name[dp->name_len];
+	dp->name[dp->name_len] = 0;
+
+	if(strcmp(dp->name, name) == 0) {
+	  return ((u16)dp->inode);
+	}
+	dp->name[dp->name_len] = c;
+	dp = (char *)dp + dp->rec_len;
+      }
+    }
+  }
+  return 0;
 }
 
 int move(u16 segment) {
   u16 i, j;
 
   for(i = 0; i < tsize+dsize; i+=2) {
-    p = get_word(segment+2, i);
-    put_word(p, segment, i);
+    j = get_word(segment+2, i);
+    put_word(j, segment, i);
   }
 }
 
@@ -147,6 +214,25 @@ int get_block(u16 blk, char *buf){
   diskr( blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
 }
 
+int makeUserImage(char *filename, PROC *p) {
+  u16 i, segment;
+
+  segment = (p->pid+1)*0x1000;
+  load(filename,segment);
+
+  for(i = 1; i <= 12; i++) {
+    put_word(0, segment, -2*i);
+  }
+
+  put_word(0x200, segment, -2*1);
+  put_word(segment, segment, -2*2);
+  put_word(segment, segment, -2*11);
+  put_word(segment, segment, -2*12);
+
+  p->usp = -2*12;
+  p->uss = segment;
+  return 0;
+}
 void do_tswitch(){
   tswitch();
 }
@@ -445,18 +531,7 @@ int printQueue(PROC *queue, char *queueName) {
     return 0;
   }
   while(p){
-    myprintf("[%d, %d]->", p->pid, p->priority);
-    p = p->next;
-  }
-  myprintf("NULL\n");
-  return 1;
-}
-PROC *kfork() // create a child process, begin from body()
-{
-  int i;
-  PROC *p = 0;
-
-  p = get_proc(&freeList);
+    myprintf("[%d, %d]->", p->pid, p->priority); 
 
   if(!p) {
     printf("no more PROC, kfork() failed\n");
@@ -474,8 +549,16 @@ PROC *kfork() // create a child process, begin from body()
 
   p->kstack[SSIZE-1] = (int)body; // resume point = address of body()
   p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
-  enqueue(&readyQueue, p);        // enter p into readyQueue by priority
 
+  enqueue(&readyQueue, p);        // enter p into readyQueue by priority
+  printQueue(readyQueue, "readyQueue");
+  nproc++;
+  segment = (p->pid+1)*0x1000;
+
+  if(filename){
+    segment = 0x1000*(p->pid+1);
+    makeUserImage(filename, p);
+  }
   return p;
 }
 
