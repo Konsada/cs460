@@ -531,7 +531,20 @@ int printQueue(PROC *queue, char *queueName) {
     return 0;
   }
   while(p){
-    myprintf("[%d, %d]->", p->pid, p->priority); 
+    myprintf("[%d, %d]->", p->pid, p->priority);
+    p = p->next;
+  }
+  myprintf("NULL\n");
+  return 1;
+}
+PROC *kfork(char *filename) // create a child process, begin from body()
+{
+  int i;
+  PROC *p = 0;
+  u16 segment;
+
+  p = get_proc(&freeList);
+   
 
   if(!p) {
     printf("no more PROC, kfork() failed\n");
