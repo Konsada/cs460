@@ -105,6 +105,32 @@ int load(char *filename, u16 segment);
 u16 search(INODE *ip, char *name);
 
 
+int makeUimage(char *filename, PROC *p) {
+  u16 i, segment;
+
+  //segment is p's space in memory
+  segment = (p->pid + 1)*0x1000;
+  load(filename, segment);
+
+  //clear ustack in segment
+
+  for(i = 1; i <= 12; i++) {
+    put_word(0, segment, (-2*i));
+  }
+
+  // write in flag(1), uCS(2), uES(11), uDS(12)
+
+  put_word(0x0200, segment, (-2*1));
+  put_word(segment, segment, (-2*2));
+  put_word(segment, segment, (-2*11));
+  put_word(segment, segment, (-2*12));
+
+  // uSP and uss needs to be set
+  p->usp = -2*12;
+  p->uss = segment;
+  return 0;
+}
+
 int load(char *filename, u16 segment){
   u32 *temp;
   u16 i, curInode;
@@ -537,6 +563,27 @@ int printQueue(PROC *queue, char *queueName) {
   myprintf("NULL\n");
   return 1;
 }
+
+int kexec(char *umodeFilePointer) {
+  int i, length = 0;
+  char filename[64], *cp = filename;
+  u16 segment = running->uss;
+
+  while((*cp++ = get_byte(running->uss, umodeFilePointer++)) && length++ < 64);
+  if(!load(filename, segment))
+    return -1;
+
+  for(i = 1; i <= 12; i++) 
+    put_word(0, segment, (-2*i));
+
+  running->usp = -24;
+
+  put_word(segment, segment, (-2*12));  // uDS = segment
+  put_word(segment, segment, (-2*11));  // uES = segment
+  put_word(segment, segment, (-2*2));   // uCS = segment, uPC = 0
+  put_word(0x0200, segment, (-2*1));    // Umode flag=0x0200
+}
+
 PROC *kfork(char *filename) // create a child process, begin from body()
 {
   int i;
@@ -544,7 +591,6 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   u16 segment;
 
   p = get_proc(&freeList);
-   
 
   if(!p) {
     printf("no more PROC, kfork() failed\n");
@@ -572,6 +618,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
     segment = 0x1000*(p->pid+1);
     makeUserImage(filename, p);
   }
+  printf("PROC %d forked a child %d in segment=%x\n", running->pid, p->pid, segment);
   return p;
 }
 
