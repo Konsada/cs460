@@ -1,67 +1,6 @@
 #ifndef TYPE_H
 #define TYPE_H
 
-typedef unsigned char u8;
-typedef unsigned int u16;
-typedef unsigned long u32;
-
-// define shorter TYPES, save typing efforts
-typedef struct ext2_group_desc {
-  u32 bg_block_bitmap;
-  u32 bg_inode_bitmap;
-  u32 bg_inode_table;
-  u16 bg_free_blocks_count;
-  u16 bg_free_inodes_count;
-  u16 bg_used_dirs_count;
-  u16 bg_pad;
-  u32 bg_reserved[3];
-} GD;
-typedef struct ext2_super_block{
-  u32 s_inodes_count;
-  u32 s_blocks_count;
-  u32 s_r_blocks_count;
-  u32 s_free_blocks_count;
-  u32 s_free_inodes_count;
-  u32 s_first_data_block;
-  u32 s_log_block_size;
-  u32 s_log_frag_size;
-  u32 s_blocks_per_group;
-  u32 s_frags_per_group;
-  u32 s_inodes_per_group;
-  u32 s_mtime, s_wtime;
-  u16 s_mnt_count;
-  u16 s_magic;            // 0xEF53
-}SUPER;
-typedef struct ext2_inode {
-  u16 i_mode;
-  u16 i_uid;
-  u32 i_size;
-  u32 i_atime;
-  u32 i_ctime;
-  u32 i_mtime;
-  u32 i_dtime;
-  u16 i_gid;
-  u16 i_links_count;
-  u32 i_blocks;
-  u32 i_flags;
-  u32 reserved;
-  u32 i_block[15];
-  u32 i_pad[7];
-}INODE;
-
-typedef struct ext2_dir_entry_2{
-  u32 inode;
-  u16 rec_len;
-  u8 name_len;
-  u8 file_type;
-  char name[255];
-}DIR;    // need this for new version of e2fs
-
-GD    *gp;
-SUPER *sp;
-INODE *ip;
-DIR   *dp; 
-
 #define BLOCK_SIZE        1024
 #define BITS_PER_BLOCK    (8*BLOCK_SIZE)
 #define INODES_PER_BLOCK  (BLOCK_SIZE/sizeof(INODE))
@@ -107,14 +46,70 @@ DIR   *dp;
 //calculate dir entry ideal_len
 #define RECLEN(nlen) 4*((8 + nlen + 3)/4)
 
+
+/*
+// define shorter TYPES, save typing efforts
+typedef struct ext2_group_desc {
+  u32 bg_block_bitmap;
+  u32 bg_inode_bitmap;
+  u32 bg_inode_table;
+  u16 bg_free_blocks_count;
+  u16 bg_free_inodes_count;
+  u16 bg_used_dirs_count;
+  u16 bg_pad;
+  u32 bg_reserved[3];
+} GD;
+
+typedef struct ext2_super_block{
+  u32 s_inodes_count;
+  u32 s_blocks_count;
+  u32 s_r_blocks_count;
+  u32 s_free_blocks_count;
+  u32 s_free_inodes_count;
+  u32 s_first_data_block;
+  u32 s_log_block_size;
+  u32 s_log_frag_size;
+  u32 s_blocks_per_group;
+  u32 s_frags_per_group;
+  u32 s_inodes_per_group;
+  u32 s_mtime, s_wtime;
+  u16 s_mnt_count;
+  u16 s_magic;            // 0xEF53
+}SUPER;
+
+typedef struct ext2_inode {
+  u16 i_mode;
+  u16 i_uid;
+  u32 i_size;
+  u32 i_atime;
+  u32 i_ctime;
+  u32 i_mtime;
+  u32 i_dtime;
+  u16 i_gid;
+  u16 i_links_count;
+  u32 i_blocks;
+  u32 i_flags;
+  u32 reserved;
+  u32 i_block[15];
+  u32 i_pad[7];
+}INODE;
+
+typedef struct ext2_dir_entry_2 {
+  u32 inode;
+  u16 rec_len;
+  u8 name_len;
+  u8 file_type;
+  char name[255];
+} DIR;    // need this for new version of e2fs
+
 // Open File Table
- typedef struct oft{
+typedef struct oft{
   int   mode;
   int   refCount;
   struct minode *inodeptr;
   int   offset;
 } OFT;
-
+/*
 // PROC structure
 typedef struct proc{
   int   uid;
@@ -148,7 +143,15 @@ typedef struct mount{
   char   mount_name[64];
 } MOUNT;
 
-typedef enum {false, true}bool;
+typedef enum {false, true} bool;
+
+GD    *gp;
+SUPER *sp;
+INODE *ip;
+DIR   *dp; 
+
+
+
 //minode array and root to load
 MINODE minode[NMINODES], *root;
 
@@ -173,4 +176,5 @@ int fd;
 char pathname[64], parameter[64], cmd[32];
 
 bool DEBUG = true;
+*/
 #endif

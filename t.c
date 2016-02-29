@@ -7,7 +7,7 @@
 #define NULL 0
 
 typedef enum {FREE, READY, SLEEP, BLOCK, ZOMBIE} STATUS;
-
+/*
 typedef struct proc{
   struct proc *next;
   int    ksp;               // saved ksp when not running
@@ -20,7 +20,7 @@ typedef struct proc{
   int event;
   int exitCode;
 }PROC;
-
+*/
 typedef struct head{
   u32 ID_space;              // 0x04100301: combined I&D or 0x04200301: separate I&D
   u32 magic_number;          // 0x00000020
@@ -30,8 +30,9 @@ typedef struct head{
   u32 zero;                  // 0
   u32 total_size;            // total memory size, including heap
   u32 symbolTable_size;      // only if symbol table is present
-}HEAD;
+}HEADER;
 
+u16 tsize, dsize, bsize, totalSize;
 int  procSize = sizeof(PROC);
 int nproc = 0;
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;    // define NPROC procs
@@ -54,7 +55,92 @@ void do_sleep();
 void do_wakeup();
 void do_wait();
 int get_block(u16 blk, char *buf);
+int move(u16 segment);
+int clearbss(u16);
+int load(char *filename, u16 segment);
 
+
+
+int load(char *filename, u16 segment){
+  u32 *temp;
+  u16 i, curInode;
+  HEADER *tempH;
+
+  strcpy(path, filename);
+  strtok(path);
+
+  getblk(2, buf);
+  gp = (GD*)buf;
+  getblk((u16)gp->bg_inode_table, buf);
+  ip = (INODE*)buf + 1;
+
+  for(i = 0; i < nameCount; i++) {
+    curInode = search (ip, name[i]);
+    if(!curInode) {
+      myprintf("\n%s not found!\n", name[i]);
+      return -1;
+    }
+    curInode--;
+    getblk(gp->bg_inode_table + (curInode / 8), buf);
+    ip = (INODE *)buf + (curInode % 8);
+  }
+
+  //save header info
+  getblk(ip->i_block[0], buf);
+  tempH = (HEADER *)buf;
+  tsize = tempH->tsize;
+  dsize = tempH->dsize;
+  bsize = tempH->bsize;
+  totalSize = tempH->total_size;
+
+  if(ip->i_block[12])
+    getblk((u16)ip->i_block[12], buf);
+
+  setes(segment);
+
+  for(i = 0; i < 12 && ip->i_block[i]; i++){
+    getblk((u16)ip->i_block[i], 0); // load i_block[i]
+    inces(); // increment ES by 1K
+  }
+
+  if((u16)ip->i_block[12]) {
+    temp = (u32*)buf;
+    while(*temp){
+      getblk((u16)*temp, 0);
+      inces();
+      temp++;
+    }
+  }
+
+  move(segment);
+
+  clearbss(segment);
+  setes(0x1000);
+  printf(" done\n");
+  return 1;
+}
+
+int move(u16 segment) {
+  u16 i, j;
+
+  for(i = 0; i < tsize+dsize; i+=2) {
+    p = get_word(segment+2, i);
+    put_word(p, segment, i);
+  }
+}
+
+int clearbss(u16 segment) {
+  u16 i, j, seg, remainder;
+
+  remainder = (tsize + dsize) % 16;
+
+  for( i = 0; i < remainder; i++) {
+    put_byte(0, (segment + (tsize + dsize)/16), i);
+  }
+  for(j = 0; j < bsize; j++) {
+    put_byte(0, (segment + (tsize + dsize)/16), j + i);
+  }
+}
 int get_block(u16 blk, char *buf){
   // Convert blk into (C,H,S) format by Mailman to suit disk geometry
   //      CYL           HEAD            SECTOR
@@ -414,44 +500,44 @@ int printProc(PROC *p) {
 
 int init()
 {
-   PROC *p;
-   int i, j;
+  PROC *p;
+  int i, j;
 
-   running = freeList = readyQueue = sleepList = 0;
+  running = freeList = readyQueue = sleepList = 0;
 
-   myprintf("init ...");
-   /* initialize all proc's */
-   for (i=0; i<NPROC; i++){
-       p = &proc[i];
-       p->status = FREE;
-       p->pid = i;                        // pid = 0,1,2,..NPROC-1
-       p->priority = 0;
-       p->ppid = 0;
-       p->parent = 0;
-       if(i < NPROC - 1)
-	 p->next = &proc[i+1];
-       else
-	 p->next = 0;
-       if (i){                            // not for P0
-          p->kstack[SSIZE-1] = (int)body; // entry address of body()
-          for (j=2; j<10; j++)            // kstack[ ] high end entries = 0
-               p->kstack[SSIZE-j] = 0;
-          p->ksp = &(p->kstack[SSIZE-9]);
-       }
-       //printProc(p);
-   }       
-   running = &proc[0];
-   running->status = READY;
-   running->parent = &proc[0];
+  myprintf("init ...");
+  /* initialize all proc's */
+  for (i=0; i<NPROC; i++){
+    p = &proc[i];
+    p->status = FREE;
+    p->pid = i;                        // pid = 0,1,2,..NPROC-1
+    p->priority = 0;
+    p->ppid = 0;
+    p->parent = 0;
+    if(i < NPROC - 1)
+      p->next = &proc[i+1];
+    else
+      p->next = 0;
+    if (i){                            // not for P0
+      p->kstack[SSIZE-1] = (int)body; // entry address of body()
+      for (j=2; j<10; j++)            // kstack[ ] high end entries = 0
+	p->kstack[SSIZE-j] = 0;
+      p->ksp = &(p->kstack[SSIZE-9]);
+    }
+    //printProc(p);
+  }       
+  running = &proc[0];
+  running->status = READY;
+  running->parent = &proc[0];
        
    
-   proc[NPROC-1].next = NULL;             // all procs form a linear link list
-   freeList = &proc[1];
-   readyQueue = 0;
+  proc[NPROC-1].next = NULL;             // all procs form a linear link list
+  freeList = &proc[1];
+  readyQueue = 0;
 
-   myprintf("done\n");
+  myprintf("done\n");
 
- }
+}
 
 int body()
 { 
