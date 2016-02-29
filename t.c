@@ -1,8 +1,11 @@
 #include "util.h"
+#include "type.h"
+
 #define NPROC 9                // number of PROCs
 #define SSIZE 1024             // per proc stack area 
 #define RED 
 #define NULL 0
+
 typedef enum {FREE, READY, SLEEP, BLOCK, ZOMBIE} STATUS;
 
 typedef struct proc{
@@ -17,6 +20,17 @@ typedef struct proc{
   int event;
   int exitCode;
 }PROC;
+
+typedef struct head{
+  u32 ID_space;              // 0x04100301: combined I&D or 0x04200301: separate I&D
+  u32 magic_number;          // 0x00000020
+  u32 tsize;                 // code section size in bytes
+  u32 dsize;                 // initialized data section size in bytes
+  u32 bsize;                 // bss section size in bytes
+  u32 zero;                  // 0
+  u32 total_size;            // total memory size, including heap
+  u32 symbolTable_size;      // only if symbol table is present
+}HEAD;
 
 int  procSize = sizeof(PROC);
 int nproc = 0;
@@ -39,6 +53,13 @@ void do_exit();
 void do_sleep();
 void do_wakeup();
 void do_wait();
+int get_block(u16 blk, char *buf);
+
+int get_block(u16 blk, char *buf){
+  // Convert blk into (C,H,S) format by Mailman to suit disk geometry
+  //      CYL           HEAD            SECTOR
+  diskr( blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
+}
 
 void do_tswitch(){
   tswitch();
