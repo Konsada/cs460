@@ -9,7 +9,7 @@
 #define PC 15
 #define PD 16
 #define AX 8
-enum STATUS {FREE, READY, SLEEP, BLOCK, ZOMBIE};
+enum STATUS {FREE, READY, SLEEP, BLOCK, ZOMBIE, RUNNING};
 
 
 typedef struct proc{
@@ -169,14 +169,18 @@ int load(char *filename, u16 segment){
   u16 i, curInode;
   HEADER *tempH;
 
-  mystrcpy(path, filename);
-  strtok(path);
+  myprintf("load filename: %s from: segment %x\n", filename, segment);
+
+  strcpy(pathname, filename);
+  
+  strtok(pathname);
 
   get_block(2, buf);
   gp = (GD*)buf;
   get_block((u16)gp->bg_inode_table, buf);
   ip = (INODE*)buf + 1;
-
+  myprintf("nameCount: %d\n", nameCount);
+  while(i < nameCount) myprintf("name[%d]: %s\n", i, name[i++]);
   for(i = 0; i < nameCount; i++) {
     curInode = search (ip, name[i]);
     if(!curInode) {
@@ -275,7 +279,7 @@ int get_block(u16 blk, char *buf){
 
 int makeUserImage(char *filename, PROC *p) {
   u16 i, segment;
-
+  myprintf("makeUserImage for proc %d\n", p->pid);
   segment = (p->pid+1)*0x1000;
   load(filename,segment);
 
@@ -371,15 +375,17 @@ int do_wakeup(){
 }
 int do_wait(int *input){
   int pid, status;
+
   pid = kwait(&status);
-  if(child<0){
+
+  if(pid<0){
     myprintf("wait error on proc %d, no child!\n", running->pid);
     return -1;
   }
   myprintf("ZOMBIE child [pid: %d | status %d]\n", pid, status);
 
   put_word(status, running->uss, input);
-  return child;
+  return pid;
 }
 
 void ksleep(int event){
@@ -389,6 +395,7 @@ void ksleep(int event){
   reschedule();
   tswitch();
 }
+
 int kwakeup(int event){
   int i = 0;
   PROC *p;
@@ -438,7 +445,7 @@ int kwait(int *status){
   PROC *p;
 
   while(1){
-    for(i = 1; i < NPROC; i++) {
+    for(i = 0; i < NPROC; i++) {
       p = &proc[i];
       if(p->status != FREE && p->ppid == running->pid) {
 	hasChild = 1;
@@ -469,7 +476,8 @@ int reschedule() {
 }
 int scheduler()
 {
-  if (running->status == READY){
+  if (running->status == RUNNING){
+    running->status = READY;
     enqueue(&readyQueue, running);
   }
   running = dequeue(&readyQueue);
@@ -613,18 +621,19 @@ int printQueue(PROC *queue, char *queueName) {
   return 1;
 }
 
-int kexec(char *umodeFilePointer) {
+int exec(char *umodeFilePointer) {
   int i, length = 0;
   char filename[64], *cp = filename;
   u16 segment = running->uss;
-
-  while((*cp++ = get_byte(running->uss, umodeFilePointer++)) && length++ < 64);
+  
+  while((*cp++ = get_byte(segment, umodeFilePointer++)) && length++ < 64);
   if(!load(filename, segment))
     return -1;
 
   for(i = 1; i <= 12; i++) 
     put_word(0, segment, (-2*i));
 
+  running->uss = segment;
   running->usp = -24;
 
   put_word(segment, segment, (-2*12));  // uDS = segment
@@ -655,11 +664,13 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   for (i = 1; i < 10; i++)          // saved CPU registers
     p->kstack[SSIZE - i] = 0; 
 
-  p->kstack[SSIZE-1] = (int)goUmode; // resume point = address of body()
+  p->kstack[SSIZE-1] = (int)goUmode; // resume point = address of goUmode()
   p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
 
   enqueue(&readyQueue, p);        // enter p into readyQueue by priority
+  myprintf("breakhere\n");
   printQueue(readyQueue, "readyQueue");
+  myprintf("gethere?\n");
   nproc++;
   segment = (p->pid+1)*0x1000;
 
@@ -694,7 +705,7 @@ int init()
 {
   PROC *p;
   int i, j;
-  color = 0x0A;
+  color = 0x0C;
   running = freeList = readyQueue = sleepList = 0;
 
   myprintf("init ...");
@@ -710,22 +721,28 @@ int init()
       p->next = &proc[i+1];
     else
       p->next = 0;
-    if (i){                            // not for P0
+
+    /*   if (i){                            // not for P0
       p->kstack[SSIZE-1] = (int)body; // entry address of body()
       for (j=2; j<10; j++)            // kstack[ ] high end entries = 0
 	p->kstack[SSIZE-j] = 0;
       p->ksp = &(p->kstack[SSIZE-9]);
     }
     //printProc(p);
-  }       
+    */
+  }   
+
+  // ******************************
+  // PERHAPS WILL CHANGE LATER
+  // ******************************
+    
   running = &proc[0];
   running->status = READY;
   running->parent = &proc[0];
-       
+  nproc = 1;
    
-  proc[NPROC-1].next = NULL;             // all procs form a linear link list
+  //  proc[NPROC-1].next = NULL;             // all procs form a linear link list
   freeList = &proc[1];
-  readyQueue = 0;
 
   myprintf("done\n");
 
@@ -780,32 +797,43 @@ int body() {
   while(1) {
     printQueues();
 
-    myprintf("proc %d running: parent = %d enter a char [s|f|w|q|u] : ", running->pid, running->parent->pid);
+    myprintf("proc %d running: parent = %d enter a char [s|f|w|q|u|e|r] : ", running->pid, running->parent->pid);
     c = getc();
     myprintf("%c\n", c);
     switch(c){
-    case 's': do_tswtich(); break;
+    case 's': do_tswitch(); break;
     case 'f': do_kfork(); break;
     case 'w': do_wait(); break;
     case 'q': do_exit(); break;
     case 'u': goUmode(); break;
+    case 'e': exec(); break;
+    case 'r': fork(); break;
+      //    default : invalid(c);
     }
   }
 }
+
+int invalid(char *name)
+{
+    printf("Invalid command : %s\n", name);
+}
+
 int main()
 {
   myprintf("MTX starts in main()\n");
   init();
   set_vector(80, int80h);
-
-  kfork("/bin/u1");
+  myprintf("please enter filename: \n");
+  gets(pathname);
+  myprintf("\nentered: %s\n", pathname);
+  kfork(pathname);
   while(1){
     myprintf("P%d running\n", running->pid);
     if(nproc==2 && proc[1].status != READY)
       printf("no runable process, system halts\n");
     while(!readyQueue);
     myprintf("P%d switch process\n", running->pid);
-    tswitch();
+    do_tswitch();
     //  body();
   }
 }
@@ -837,3 +865,4 @@ int kcinth() {
   }
   put_word(r, segment, offset + 2*AX);
 }
+

@@ -9,7 +9,7 @@ char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 u16 nameCount = 0;
 char *name[32];
-char path[128];
+char pathname[128];
 char buf[1024];
 
 void myprintf(char *fmt, ...);
@@ -21,7 +21,7 @@ int strtok(char *path){
   char *cp;
   cp = path;
   nameCount = 0;
-
+  myprintf("tok(%s)\n", path);
   while(*cp != 0) {
     while(*cp == '/') *cp++ = 0;
     if(*cp != 0)
@@ -33,10 +33,12 @@ int strtok(char *path){
       break;
     cp++;
   }
+  myprintf("pathname broken into %d names\n", nameCount);
 }
-int mystrcpy(char dest[], char source[]){
+int mystrcpy(char *dest, char *source){
   int i = 0;
-  while(source[i]) dest[i] = source[i];
+  myprintf("mystrcpy(%s)\n", source);
+  while(source[i]) dest[i] = source[i++];
   dest[i] = 0;
   return 0;
 }
