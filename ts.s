@@ -1,7 +1,7 @@
         OSSEG  = 0x1000
 	
        .globl _main,_running,_scheduler,_proc,_procSize  ! IMPORT
-       .globl _tswitch,_inces,_diskr,_setes,_printf
+       .globl _tswitch,_inces,_diskr,_setes,_printf, _int80h, _goUmode, _kcinth
 	
         jmpi   start,OSSEG
 
@@ -86,3 +86,49 @@ error:
 	call _printf
 	int  0x19		! reboot
 msg:	.asciz "Loading Error!"
+
+_int80h:
+	push ax			! save CPU registers in ustack
+	push bx
+	push cx
+	push dx
+	push bp
+	push si
+	push di
+	push es
+	push ds
+	push cs
+	pop  ds
+
+	mov  si, _running	! switch CPU from Umode to Kmode
+	mov  4[si], ss
+	mov  6[si], sp
+
+	mov  di, ds
+	mov  es, di
+	mov  ss, di
+
+	mov  sp, _running
+	add  sp, _procSize
+
+	call _kcinth		! call handler function 
+	jmp  _goUmode
+
+_goUmode:
+	cli
+	mov  bx, _running	! restore Umode uSS and uSP from running PROC
+	mov  cx, 4[bx]
+	mov  ss, cx
+	mov  sp, 6[bx]
+
+	pop  ds			! restore saved CPU registers from ustack
+	pop  es
+	pop  di
+	pop  si
+	pop  bp
+	pop  dx
+	pop  cx
+	pop  bx
+	pop  ax
+
+	iret			! iret back to Umode

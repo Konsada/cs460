@@ -4,7 +4,11 @@
 #define NPROC 9                // number of PROCs
 #define SSIZE 1024             // per proc stack area 
 #define NULL 0
-
+#define PA 13
+#define PB 14
+#define PC 15
+#define PD 16
+#define AX 8
 enum STATUS {FREE, READY, SLEEP, BLOCK, ZOMBIE};
 
 
@@ -73,7 +77,6 @@ typedef struct head{
 u16 tsize, dsize, bsize, totalSize;
 int  procSize = sizeof(PROC);
 u16 nproc = 0;
-
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;    // define NPROC procs
 extern int color;
 char* string[30];
@@ -88,22 +91,52 @@ int enqueue();
 PROC *dequeue (PROC **queue);
 int body();
 void ksleep(int event);
-void kwakeup(int event);
+int kwakeup(int event);
 int kexit(int exitValue);
 int kwait(int *status); 
 void do_tswitch();
 int do_kfork();
 PROC *kfork();
-void do_exit();
+int do_exit();
 void do_sleep();
-void do_wakeup();
-void do_wait();
+int do_wakeup();
+int do_wait();
 int get_block(u16 blk, char *buf);
 int move(u16 segment);
 int clearbss(u16);
 int load(char *filename, u16 segment);
 u16 search(INODE *ip, char *name);
 
+int copyImage(u16 pseg, u16 cseg, u16 size) {
+  u16 i;
+  for(i = 0; i < size; i++) {
+    put_word(get_word(pseg, 2*i), cseg, 2*i);
+  }
+}
+
+int fork() {
+  int pid; u16 segment;
+  PROC *p = kfork(0);
+  if(p == 0) return -1;
+  segment = (p->pid+1)*0x1000;
+  copyImage(running->uss, segment, 32*1024);
+  p->uss = segment;
+  p->usp = running->usp;
+
+  put_word(segment, segment, p->usp);      // uDS = segment
+  put_word(segment, segment, p->usp+2);    // uES = segment
+  put_word(0, segment, p->usp+2*8);        // uax = 0
+  put_word(segment, segment, p->usp+2*10); // uCS = segment
+
+  return p->pid;
+}
+int int80h();
+int goUmode();
+
+int set_vector(int vector, int handler) {
+  put_word(handler, 0x0000, vector*4);     // KPC points to handler
+  put_word(0x1000, 0x0000, vector*4+2);    // KCS segment=0x1000
+}
 
 int makeUimage(char *filename, PROC *p) {
   u16 i, segment;
@@ -260,24 +293,32 @@ int makeUserImage(char *filename, PROC *p) {
   return 0;
 }
 void do_tswitch(){
+  myprintf("proc %d tswitch()\n", running->pid);
   tswitch();
+  myprintf("proc %d resumes\n", running->pid);
 }
 
 int do_kfork(){
-  PROC *child, *p;
-  child = kfork();
+  PROC *child;
+  myprintf("proc %d kfork a child\n", running->pid);
+  child = kfork("/u1");
   if(child){
-    return p->pid;
+    myprintf("child pid = %d\n", child->pid);
+    return child->pid;
   }
   else
     myprintf("Failed fork\n");
   return -1;
 }
 
-void do_exit(){
+int do_exit(){
   int exitValue = 0;
   char *input;
 
+  if(running->pid == 1 && nproc > 2) {
+    myprintf("other procs still exist, P%d can't die yet!\n", running->pid);
+    return -1;
+  }
   myprintf("Please enter an exitValue: ");
   gets(input);
   myprintf("\ngets(%s) complete\n", input);
@@ -289,7 +330,7 @@ void do_exit(){
   }
   else
     myprintf("Exit value not recognized!\n");
-  return;
+  return 0;
 }
 
 void do_sleep(){
@@ -309,7 +350,7 @@ void do_sleep(){
   return;
 }
 
-void do_wakeup(){
+int do_wakeup(){
   int event = 0;
   char *input;
 
@@ -325,13 +366,20 @@ void do_wakeup(){
   else{
     myprintf("Event not recognized!\n");
   }
-  return;
+  return 0;
 
 }
-void do_wait(){
+int do_wait(int *input){
   int pid, status;
   pid = kwait(&status);
-  myprintf("waiting [pid: %d | status %d]\n", pid, status);
+  if(child<0){
+    myprintf("wait error on proc %d, no child!\n", running->pid);
+    return -1;
+  }
+  myprintf("ZOMBIE child [pid: %d | status %d]\n", pid, status);
+
+  put_word(status, running->uss, input);
+  return child;
 }
 
 void ksleep(int event){
@@ -341,7 +389,7 @@ void ksleep(int event){
   reschedule();
   tswitch();
 }
-void kwakeup(int event){
+int kwakeup(int event){
   int i = 0;
   PROC *p;
   for(i = 1; i < NPROC; i++) {
@@ -356,6 +404,7 @@ void kwakeup(int event){
     }
   }
   reschedule();
+  return 0;
 }
 
 int kexit(int exitValue){
@@ -606,7 +655,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   for (i = 1; i < 10; i++)          // saved CPU registers
     p->kstack[SSIZE - i] = 0; 
 
-  p->kstack[SSIZE-1] = (int)body; // resume point = address of body()
+  p->kstack[SSIZE-1] = (int)goUmode; // resume point = address of body()
   p->ksp = &(p->kstack[SSIZE-9]);   // proc saved sp
 
   enqueue(&readyQueue, p);        // enter p into readyQueue by priority
@@ -645,7 +694,7 @@ int init()
 {
   PROC *p;
   int i, j;
-
+  color = 0x0A;
   running = freeList = readyQueue = sleepList = 0;
 
   myprintf("init ...");
@@ -682,7 +731,7 @@ int init()
 
 }
 
-int body()
+/*int body()
 { 
   PROC *child = 0;
   char c = '\0';
@@ -722,14 +771,69 @@ int body()
     }
   }
 }
+*/
 
+int body() {
+  char c;
+  printf("proc %d resumes to body()\n", running->pid);
+
+  while(1) {
+    printQueues();
+
+    myprintf("proc %d running: parent = %d enter a char [s|f|w|q|u] : ", running->pid, running->parent->pid);
+    c = getc();
+    myprintf("%c\n", c);
+    switch(c){
+    case 's': do_tswtich(); break;
+    case 'f': do_kfork(); break;
+    case 'w': do_wait(); break;
+    case 'q': do_exit(); break;
+    case 'u': goUmode(); break;
+    }
+  }
+}
 int main()
 {
   myprintf("MTX starts in main()\n");
   init();
-  myprintf("P%d running\n", running->pid);
-  kfork();
-  myprintf("P%d switch process\n", running->pid);
-  tswitch();
-  body();
+  set_vector(80, int80h);
+
+  kfork("/bin/u1");
+  while(1){
+    myprintf("P%d running\n", running->pid);
+    if(nproc==2 && proc[1].status != READY)
+      printf("no runable process, system halts\n");
+    while(!readyQueue);
+    myprintf("P%d switch process\n", running->pid);
+    tswitch();
+    //  body();
+  }
+}
+
+int kcinth() {
+  u16 segment, offset;
+  int a, b, c, d, r;
+
+  segment = running->uss;
+  offset = running->usp;
+
+  a = get_word(segment, offset + 2*PA);
+  b = get_word(segment, offset + 2*PB);
+  c = get_word(segment, offset + 2*PC);
+  d = get_word(segment, offset + 2*PD);
+
+  switch(a) {
+  case 0: r = running->pid; break;
+    //  case 1: r = do_ps(); break;
+    //  case 2: r = chname(b); break;
+    //  case 3: r = kmode(); break;
+  case 4: r = tswitch(); break;
+  case 5: r = do_wait(b); break;
+  case 6: r = do_exit(b); break;
+  case 7: r = fork(); break;
+  case 8: r = exec(b); break;
+  case 99: do_exit(b); break;
+  default: myprintf("invalid syscall # : %d\n", a);
+  }
+  put_word(r, segment, offset + 2*AX);
 }
