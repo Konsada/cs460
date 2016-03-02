@@ -77,11 +77,12 @@ void do_sleep(){
   int event = 0;
   char *input;
 
-  myprintf("Please enter an event value to sleep on: ");
+    myprintf("Please enter an event value to sleep on: ");
   gets(input);
-  myprintf("\ngets(%s) complete\n", input);
+  putc('\n');
+  //myprintf("\ngets(%s) complete\n", input);
   event = getint(input);
-  myprintf("%d = getint(%s)\n", event, input);
+  //  myprintf("%d = getint(%s)\n", event, input);
 
   if(event)
     ksleep(event);
@@ -199,6 +200,7 @@ int reschedule() {
   if(running->priority < readyQueue->priority)
     rflag = 1;
 }
+
 int scheduler()
 {
   if (running->status == READY){
@@ -278,6 +280,21 @@ PROC *dequeue (PROC **queue) {
   //  printProc(p);
   return p;
 }
+// dequeus a process with a certain id from the queue passed in
+PROC *dequeuePid(PROC **queue, int pid) {
+  PROC *p, *q = *queue, *r;
+
+  p = q;
+  while(p) {
+    if(p->next && p->next->pid == pid) {
+      r = p->next;
+      p->next = r->next;
+      return r;
+    }
+    p = p->next;
+  }
+  return NULL;
+}
 
 int exit(){
   if(running->pid == 0) {
@@ -300,7 +317,7 @@ int printQueues() {
   myprintf("freelist    = ");
   p = freeList;
   //print freeList
-  while(p) {
+  while(p && p->status == FREE) {
     myprintf(" %d ->", p->pid);
     p = p->next;
   }
@@ -309,7 +326,7 @@ int printQueues() {
   p = readyQueue;
   myprintf("readyQueue  = ");
   //print readyQueue
-  while(p) {
+  while(p && p->status == READY) {
     myprintf(" %d [%d ] ->",p->pid, p->priority);
     p = p->next;
   }
@@ -318,8 +335,15 @@ int printQueues() {
   p = sleepList;
   myprintf("sleepList   =");
   //print sleepList
-  while(p) {
+  while(p && p->status == SLEEP) {
     myprintf(" %d [ e=%d ] ->",p->pid, p->event);
+    p = p->next;
+  }
+  myprintf(" NULL\n");
+  p = zombieList;
+  myprintf("zombieList =");
+  while(p && p->status == ZOMBIE) {
+    myprintf(" %d [ e=%d ] ->", p->pid, p->exitCode);
     p = p->next;
   }
   myprintf(" NULL\n");

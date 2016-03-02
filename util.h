@@ -66,10 +66,12 @@ int gets(char *s) {
 int getint(char *fmt) {
   int i = 0, len = 0, sum = 0; 
   char c = 0;
-  myprintf("fmt: %d\n", &fmt);
+  //  myprintf("fmt: %d\n", &fmt);
+
   len = myStrLen(fmt);
 
-  myprintf("%s has a length of %d\n", fmt, len);
+  //  myprintf("%s has a length of %d\n", fmt, len);
+
   for(i = 0;i < len;i++) {
     if(fmt[i] < 48 && fmt[i] > 57) {
       myprintf("Failed to read integer!\n");
@@ -96,10 +98,10 @@ int pow(int base, int power) {
 int myStrLen(char *fmt) {
   int i = 0;
   while(*fmt++) {
-    myprintf("%c[%d],",*fmt, i);
+    //    myprintf("%c[%d],",*fmt, i);
     i++;
   }
-  putc('\n');
+  //  putc('\n');
   return i;
 }
 
