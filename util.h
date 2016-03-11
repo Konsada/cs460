@@ -162,9 +162,10 @@ void myprintp(u16 x) {
   switch(x){
   case 0 : myprintf("FREE"); break;
   case 1 : myprintf("READY"); break;
-  case 2 : myprintf("SLEEP"); break;
-  case 3 : myprintf("BLOCK"); break;
-  case 4 : myprintf("ZOMBIE"); break;
+  case 2 : myprintf("RUNNING");break;
+  case 3 : myprintf("STOPPED"); break;
+  case 4 : myprintf("SLEEP"); break;
+  case 5 : myprintf("ZOMBIE"); break;
   default : myprintf(" ");
   }
 }
