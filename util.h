@@ -226,4 +226,12 @@ int enqueue(PROC **queue, PROC *p) {
     temp->next = p;
   }
 }
+
+// e.g. put_proc(&freeList, p);
+int put_proc(PROC **list, PROC *p) {
+
+  p->status = FREE;
+  p->next = *list;
+  *list = p;
+}
 #endif

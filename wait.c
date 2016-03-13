@@ -20,6 +20,7 @@ int kwait(int *status){
 	if(p->status == ZOMBIE){
 	  *status = p->exitCode;
 	  p->status = FREE;
+	  printf("kwait: p->pid: %d\n", p->pid);
 	  put_proc(&freeList, p);
 	  nproc--;
 	  return(p->pid);
@@ -28,7 +29,7 @@ int kwait(int *status){
     }
     if(!hasChild)
       return (-1);
-    ksleep(running);
+    ksleep(running->event);
   }
 }
 
