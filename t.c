@@ -1,9 +1,9 @@
 #include "type.h"
-
-PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList;
+#include "util.h"
+PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;
 int procSize = sizeof(PROC);
 int nproc = 0;
-
+int rflag;
 int body();
 char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter", 
                "Saturn", "Uranus", "Neptune" };
@@ -49,21 +49,25 @@ int init()
 
 int scheduler()
 {
-    if (running->status == READY)
-        enqueue(&readyQueue, running);
+  if (running->status == RUNNING){
+    running->status = READY;
+    enqueue(&readyQueue, running);
+  }
      running = dequeue(&readyQueue);
+     running->status = RUNNING;
      color = running->pid + 0x0A;
+     rflag = 0;
 }
 
 int int80h();
-int set_vector(u16 segment, u16 handler)
+int set_vector(u16 vector, u16 handler)
 {
      // put_word(word, segment, offset)
      put_word(handler, 0, vector<<2);
      put_word(0x1000,  0,(vector<<2) + 2);
 }
             
-main()
+int main()
 {
     printf("MTX starts in main()\n");
     init();      // initialize and create P0 as running
@@ -73,8 +77,80 @@ main()
 
     while(1){
       printf("P0 running\n");
+      if(nproc==2 && proc[1].status != READY)
+	myprintf("no runable process, system halts\n");
       while(!readyQueue);
       printf("P0 switch process\n");
       tswitch();         // P0 switch to run P1
    }
+}
+
+int printQueues() {
+  PROC *p = 0;
+  int i;
+  for(i = 0; i < 40; i++) {
+    myprintf("-");
+  }
+  myprintf("\n");
+  myprintf("freelist    = ");
+  p = freeList;
+  //print freeList
+  while(p && p->status == FREE) {
+    myprintf(" %d ->", p->pid);
+    p = p->next;
+    //    getc();
+  }
+  myprintf(" NULL\n");
+
+  p = readyQueue;
+  myprintf("readyQueue  = ");
+  //print readyQueue
+  while(p && p->status == READY) {
+    //    if(p != running)
+      myprintf(" %d [%d ] ->",p->pid, p->priority);
+    p = p->next;
+    //    getc();
+  }
+  myprintf(" NULL\n");
+
+  p = sleepList;
+  myprintf("sleepList   =");
+  //print sleepList
+  while(p && p->status == SLEEP) {
+    myprintf(" %d [ e=%d ] ->",p->pid, p->event);
+    p = p->next;
+    //    getc();
+  }
+  myprintf(" NULL\n");
+  p = zombieList;
+  myprintf("zombieList =");
+  while(p && p->status == ZOMBIE) {
+    myprintf(" %d [ e=%d ] ->", p->pid, p->exitCode);
+    p = p->next;
+    //    getc();
+  }
+  myprintf(" NULL\n");
+  for(i = 0; i < 40; i++) {
+    myprintf("-");
+  }
+  myprintf("\n");
+} 
+
+int printQueue(PROC *queue, char *queueName) {
+  PROC *p = queue;
+
+  if(!p){
+    myprintf("Queue is empty!\n");
+    return 0;
+  }
+
+  myprintf("%s = ", queueName);
+
+  while(p){
+    myprintf("%d[%p]->", p->pid, p->status);
+    //    myprintf("%d[p%d,e%d,x%d]->",p->pid, p->priority, p->event, p->exitCode);
+    p = p->next;
+  }
+  myprintf("NULL\n");
+  return 0;
 }

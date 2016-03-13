@@ -13,7 +13,12 @@ int show_menu()
 
 int find_cmd(char *name)
 {
-  // return command index
+  int i;
+  for(i = 0; cmd[i]; i++){
+    if(!strcmp(name, cmd[i]))
+      return i;
+  }
+  return -1;
 }
 
 int getpid()
@@ -59,16 +64,20 @@ int wait()
     printf("\n"); 
 } 
 
+/*
 int geti()
 {
   // return an input integer
 }
+*/
 
 int exit()
 {
    int exitValue;
+   char *input;
    printf("enter an exitValue: ");
-   exitValue = geti();
+   gets(input);
+   exitValue = getint(input);
    printf("exitvalue=%d\n", exitValue);
    printf("enter kernel to die with exitValue=%d\n", exitValue);
    _exit(exitValue);
