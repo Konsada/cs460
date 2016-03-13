@@ -27,8 +27,10 @@ int kwait(int *status){
 	}
       }
     }
-    if(!hasChild)
+    if(!hasChild){
+      printf("proc has no children!\n");
       return (-1);
+    }
     ksleep(running->event);
   }
 }

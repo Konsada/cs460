@@ -75,7 +75,7 @@ int ktswitch()
 
 int kkwait(int *status)
 {
-  printf("in kernel\n");
+  printf("proc %d calling kwait\n", running->pid);
   return kwait(&status);
 }
 
