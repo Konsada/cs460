@@ -1,4 +1,5 @@
 // ucode.c file
+#include "util.h"
 
 char *cmd[]={"getpid", "ps", "chname", "kfork", "switch", "wait", "exit", 0};
 

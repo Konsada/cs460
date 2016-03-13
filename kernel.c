@@ -1,5 +1,3 @@
-extern PROC proc[];
-
 PROC *kfork(char *filename) // create a child process, begin from body()
 {
   int i, segment,pid;
@@ -31,14 +29,29 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   nproc++;
 
   if(filename){
-    load(filename, segment);
+    makeUimage("/bin/u1", child);
   }
 
   return child;
 }
 
 int makeUimage(char *filename, PROC *p){
+  u16 i, segment;
 
+  segment = (p->pid + 1)*0x1000;
+  load(filename, segment);
+
+  for(i = 1; i <= 12; i++){
+    put_word(0, segment, -2*i);
+  }
+  put_word(0x0200, segment, -2*1);
+  put_word(segment, segment, -2*2);
+  put_word(segment, segment, -2*11);
+  put_word(segment, segment, -2*12);
+
+  p->usp = -2*12;
+  p->uss = segment;
+  return 0;
 }
 
 void do_tswitch(){
@@ -51,7 +64,7 @@ int do_kfork(){
   PROC *child = 0;
 
   myprintf("proc %d kfork a child\n", running->pid);
-  child = kfork();
+  child = kfork("/bin/u1");
   if(child){
     myprintf("child pid = %d\n", child->pid);
     return child->pid;
@@ -125,6 +138,8 @@ int body()
   }
 }
 
+extern PROC proc[];
+
 int kmode(){
   body();
 }
@@ -135,9 +150,9 @@ int do_ps(){
 
   buf[15] = 0;
 
-  printf("========================================\n");
-  printf("  name        status     pid     ppid  \n");//2 name 8 status 5 pid 5 ppid
-  printf("----------------------------------------\n");
+  myprintf("========================================\n");
+  myprintf("  name        status     pid     ppid  \n");//2 name 8 status 5 pid 5 ppid
+  myprintf("----------------------------------------\n");
 
   for(i = 0; i < NPROC; i++){
     p = proc[i].name;
@@ -152,7 +167,7 @@ int do_ps(){
     myprintf("   %d     ", proc[i].pid);
     myprintf("%d/n", proc[i].ppid);
   }
-  printf("----------------------------------------\n");
+  myprintf("----------------------------------------\n");
   return 0;
 }
 
@@ -168,9 +183,9 @@ int do_chname(char *y){
   }
   buf[31] = 0;
 
-  printf("changing name of proc %d to %s\n", running->pid, buf);
+  myprintf("changing name of proc %d to %s\n", running->pid, buf);
   strcpy(running->name, buf);
-  printf("done\n");
+  myprintf("done\n");
 }
 
 int do_kkfork(){
