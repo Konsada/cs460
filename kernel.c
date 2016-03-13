@@ -1,3 +1,6 @@
+#include "type.h"
+#include "util.h"
+
 PROC *kfork(char *filename) // create a child process, begin from body()
 {
   int i, segment,pid;
@@ -137,8 +140,6 @@ int body()
     }
   }
 }
-
-extern PROC proc[];
 
 int kmode(){
   body();

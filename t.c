@@ -1,12 +1,5 @@
 #include "type.h"
 #include "util.h"
-PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;
-int procSize = sizeof(PROC);
-int nproc = 0;
-int rflag;
-int body();
-char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter", 
-               "Saturn", "Uranus", "Neptune" };
 
 /**************************************************
   bio.o, queue.o loader.o are in mtxlib

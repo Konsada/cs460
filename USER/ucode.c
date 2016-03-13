@@ -1,5 +1,4 @@
 // ucode.c file
-#include "util.h"
 
 char *cmd[]={"getpid", "ps", "chname", "kfork", "switch", "wait", "exit", 0};
 
@@ -65,20 +64,24 @@ int wait()
     printf("\n"); 
 } 
 
-/*
+
 int geti()
 {
   // return an input integer
+  char input[16];
+  return atoi(gets(input));
+
 }
-*/
+
 
 int exit()
 {
    int exitValue;
    char *input;
    printf("enter an exitValue: ");
-   gets(input);
-   exitValue = getint(input);
+   //   gets(input);
+   //   exitValue = getint(input);
+   exitValue = geti();
    printf("exitvalue=%d\n", exitValue);
    printf("enter kernel to die with exitValue=%d\n", exitValue);
    _exit(exitValue);
