@@ -23,7 +23,7 @@ int find_cmd(char *name)
 
 int getpid()
 {
-  printf("entering the kernel to get pid...\n");
+  //  printf("entering the kernel to get pid...\n");
    return syscall(0,0,0);
 }
 
@@ -47,12 +47,18 @@ int kfork()
   pid = getpid();
   printf("proc %d enter kernel to kfork a child\n", pid); 
   child = syscall(3, 0, 0);
-  printf("proc %d kforked a child %d\n", pid, child);
+  if(child < 0)
+    printf("kfork failed!\n");
+  else
+    printf("proc %d kforked a child %d\n", pid, child);
 }    
 
 int kswitch()
 {
+  int child;
+  printf("proc %d entering kernel to switch process\n", getpid());
     return syscall(4,0,0);
+    printf("proc %d back form kernel\n", getpid());
 }
 
 int wait()
