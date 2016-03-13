@@ -17,6 +17,9 @@ int kcinth()
   u16 segment, offset;
   int a,b,c,d, r;
 
+  segment = running->uss;
+  offset = running->usp;
+
   a = get_word(segment, offset + 2*PA);
   b = get_word(segment, offset + 2*PB);
   c = get_word(segment, offset + 2*PC);
@@ -49,19 +52,19 @@ int kgetpid()
 int kps()
 {
   //    WRITE C code to print PROC information
+  printf("in kernel\n");
   return do_ps();
 }
 
 int kchname(char *name)
 {
-  //    WRITE C CODE to change running's name string;
+  printf("in kernel\n");
   return do_chname(name);
 }
 
 int kkfork()
 {
-  //  use you kfork() in kernel;
-  //  return child pid or -1 to Umode!!!
+  printf("in kernel\n");
   return do_kkfork();
 }
 
@@ -72,10 +75,12 @@ int ktswitch()
 
 int kkwait(int *status)
 {
+  printf("in kernel\n");
   return kwait(&status);
 }
 
 int kkexit(int value)
 {
+  printf("in kernel\n");
   return kexit(value);
 }

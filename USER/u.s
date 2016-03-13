@@ -8,18 +8,14 @@
 	push  #0
         call  _exit
 
-_syscall:
-        int    80
-        ret
-
-
-	
 _getcs:
         mov   ax, cs
         ret
 
+_syscall:
+        int    80
+        ret
 
-	
 	!---------------------------------------------
         !  char getc( ): call BIOS to get a char
         !---------------------------------------------

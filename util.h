@@ -211,4 +211,19 @@ void myprintf(char *fmt, ...){
   }
 }
 
+// linear queue with running proc in the highest priority 
+int enqueue(PROC **queue, PROC *p) {
+  PROC *temp = *queue;
+
+  if(temp == 0 || p->priority > temp->priority){
+    *queue = p;
+    p->next = temp;
+  }
+  else{
+    while(temp->next && p->priority <= temp->next->priority)
+      temp = temp->next;
+    p->next = temp->next;
+    temp->next = p;
+  }
+}
 #endif

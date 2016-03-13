@@ -23,11 +23,13 @@ int find_cmd(char *name)
 
 int getpid()
 {
+  printf("entering the kernel to get pid...\n");
    return syscall(0,0,0);
 }
 
 int ps()
 {
+  printf("entering the kernel to print processes...\n");
    return syscall(1, 0, 0);
 }
 

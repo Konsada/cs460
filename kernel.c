@@ -87,10 +87,10 @@ int do_exit(){
   }
   myprintf("Please enter an exitValue: ");
   gets(input);
-  myprintf("\ngets(%s) complete\n", input);
+  //  myprintf("\ngets(%s) complete\n", input);
   exitValue = getint(input);
   // myprintf("%d = getint(%x) complete\n", exitValue, input);
-  myprintf("%d\n", exitValue);
+  myprintf("\n%d\n", exitValue);
   kexit(exitValue);
 }
 
@@ -148,7 +148,7 @@ char *statusStrings[ ]  = {"FREE   ", "READY  ", "RUNNING", "STOPPED", "SLEEP  "
 int do_ps(){
   int i, j;
   char *p, *q, buf[16];
-
+  printf("do_ps()\n");
   buf[15] = 0;
 
   myprintf("========================================\n");
@@ -165,8 +165,8 @@ int do_ps(){
     }
     myprintf("%s", buf);
     myprintf("%s", statusStrings[proc[i].status]);
-    myprintf("   %d     ", proc[i].pid);
-    myprintf("%d/n", proc[i].ppid);
+    myprintf("   %d       ", proc[i].pid);
+    myprintf("%d\n", proc[i].ppid);
   }
   myprintf("----------------------------------------\n");
   return 0;

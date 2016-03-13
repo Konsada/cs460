@@ -43,6 +43,7 @@ void kwakeup(int event){
   int i = 0;
   PROC *p, *tempQueue = 0;
 
+  //take proc off sleepList and wake spec proc
   while(p = dequeue(&sleepList)){
     if(p->event == event){
       p->status = READY;
@@ -59,6 +60,7 @@ int kexit(int exitValue){
   int i, wakeupP1 = 0;
   PROC *p;
 
+  //look for children
   for(i = 1; i < NPROC; i++){
     p = &proc[i];
     if(p->status != FREE && p->ppid == running->pid){
@@ -70,7 +72,7 @@ int kexit(int exitValue){
   running->exitCode = exitValue;
   running->status = ZOMBIE;
 
-  kwakeup(running->parent);
-  kwakeup(&proc[1]);
+  kwakeup(running->parent->event);
+  kwakeup(proc[1].event);
   tswitch();
 }
