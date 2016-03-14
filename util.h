@@ -308,6 +308,7 @@ int put_proc(PROC **list, PROC *p) {
 int tokenize(char *path, char delim){
   char *cp,*wp;
   int i;
+  
   //erase previous pathList
   for(i=0;i<32;i++){
     pathList[i] = 0;

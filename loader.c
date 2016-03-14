@@ -10,6 +10,7 @@ int load(char *filename, u16 segment){
   strcpy(path, filename);
   tokenize(path, '/');
   while(pathList[pathCount++]);
+  pathCount--;
 
   get_block(2, fsbuf); // put GD block into buf1;
   gp = (GD*)fsbuf;
@@ -26,16 +27,16 @@ int load(char *filename, u16 segment){
   nodeNumber = iblk;
 
   for(i = 0; i < pathCount; i++){
-    nodeNumber = findInode(ip, pathList[i]);
-    myprintf("searching for %s...\n", pathList[i]);
-    if(nodeNumber < 0){
+
+    myprintf("searching[%d:%d] for %s...\n", i,pathCount,pathList[i]);
+    nodeNumber = findInode(ip, pathList[i]);    if(nodeNumber < 0){
       myprintf("failed: %s path not found!\n", filename);
       return 0;
     }
     myprintf("success: found %s in inode %d\n", pathList[i], nodeNumber);
     nodeNumber --;
 
-    get_block((iblk+(nodeNumber/8)),fsbuf); //<--- problem child
+    get_block((u16)(iblk+(nodeNumber/8)),fsbuf); //<--- problem child
     ip = (INODE *)fsbuf + (nodeNumber % 8);
 
   }
@@ -80,6 +81,7 @@ int get_block(u16 blk, char *buf){
   //diskr(cyl,head,sector,buf);
 
   diskr((blk/18), (((2*blk)%36)/18), (((2*blk)%36)%18), buf);
+  getc();
 }
 
 int findInode(INODE *tip, char *name){
@@ -92,7 +94,8 @@ int findInode(INODE *tip, char *name){
 
     while((char*)dp< &fsbuf[BLKSIZE]){
       printf("searching...\n");
-      getc();
+      
+
       for(i = 0; i < 255; i++)
 	debugBuf[i] = 0;
       myprintf("dp->inode:    %l\n", dp->inode);
