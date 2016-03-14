@@ -7,7 +7,7 @@ bcc  -c -ansi kernel.c
 #bcc  -c -ansi int.c
 #ld86 -d -o mtx ts.o t.o kernel.o wait.o int.o mtxlib /usr/lib/bcc/libc.a
 ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
-
+cp ../temp/$VFD ./
 mount -o loop $VFD /mnt
 cp mtx /mnt/boot
 umount /mnt

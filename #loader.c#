@@ -86,15 +86,11 @@ int findInode(INODE *tip, char *name){
     get_block((u16)tip->i_block[i], fsbuf);    
     dp = (DIR*)fsbuf;
     myprintf("dp->inode: %l\n", dp->inode);
-    myprintf("dp->name_len: %u\n", dp->name_len);
     while((char*)dp< &fsbuf[BLKSIZE]){
       printf("searching...\n");
-
-            mystrncpy(&debugBuf, dp->name, dp->name_len);
-            myprintf("found: %s\n", debugBuf);
-
-            if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
-      if(!mystrcmp(debugBuf, name)){
+      strncpy(&debugBuf, dp->name, dp->name_len);
+      printf("%s\n", debugBuf);
+      if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
 	return (u16)dp->inode;
       }
       dp = dp + dp->rec_len;

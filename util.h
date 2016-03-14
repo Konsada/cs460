@@ -8,8 +8,8 @@ u16 BASE = 10;
 char *pathList[32];
 
 void myprintf(char *fmt, ...);
-int mystrcmp(char *s1, char *s2);
-u16 mystrncmp(char *s1, char *s2, int n);
+//int mystrcmp(char *s1, char *s2);
+//u16 mystrncmp(char *s1, char *s2, int n);
 
 // < 0 if s1 is less than s2 and > 0 if s1 is less than s2
 int mystrcmp(char *s1, char *s2){
@@ -26,16 +26,17 @@ int mystrcmp(char *s1, char *s2){
 
 u16 mystrncmp(char *s1, char *s2, u16 n){
   int i = 0;
+  myprintf("mystrncmp()\n");
+  myprintf("n: %d\n", n);
   while((s1[i] && s2[i]) && (i<n)){
     if(!(s1[i] - s2[i])) {
       i++;
     }
+    else
+      return s1[i] - s2[i];
   }
   if(i<n)
-    return 0;
-  else
-    return s1[i] - s2[i];
-  
+    return 0;  
 }
 
 u16 mystrncpy(char **dest, char *src, u16 n){
@@ -45,11 +46,11 @@ u16 mystrncpy(char **dest, char *src, u16 n){
   for(i=0; i<n; i++){
     cpyBuf[i] = src[i];
   }
-  cpyBuf[i] = '\0';
+  cpyBuf[i] = 0;
   for(i=0; cpyBuf[i]; i++){
     (*dest) = cpyBuf[i];
   }
-  myprintf("copied: %s\n", **dest);
+  //  myprintf("copied: %s\n", dest);
 }
 
 char *myfscanf(){
