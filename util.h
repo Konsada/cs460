@@ -5,9 +5,11 @@
 //typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
+char *pathList[32];
 
 void myprintf(char *fmt, ...);
 int mystrcmp(char *s1, char *s2);
+u16 mystrncmp(char *s1, char *s2, int n);
 
 // < 0 if s1 is less than s2 and > 0 if s1 is less than s2
 int mystrcmp(char *s1, char *s2){
@@ -22,6 +24,33 @@ int mystrcmp(char *s1, char *s2){
   return 0;
 }
 
+u16 mystrncmp(char *s1, char *s2, u16 n){
+  int i = 0;
+  while((s1[i] && s2[i]) && (i<n)){
+    if(!(s1[i] - s2[i])) {
+      i++;
+    }
+  }
+  if(i<n)
+    return 0;
+  else
+    return s1[i] - s2[i];
+  
+}
+
+u16 mystrncpy(char **dest, char *src, u16 n){
+  int i;
+  char cpyBuf[64];
+  myprintf("mystrncpy\n");
+  for(i=0; i<n; i++){
+    cpyBuf[i] = src[i];
+  }
+  cpyBuf[i] = '\0';
+  for(i=0; cpyBuf[i]; i++){
+    (*dest) = cpyBuf[i];
+  }
+  myprintf("copied: %s\n", **dest);
+}
 
 char *myfscanf(){
   char string[256];  
@@ -126,7 +155,13 @@ int rpu (u16 x) {
   }
 }
 
-
+int rpl (u32 x) {
+  char c;
+  if(x == 0)return;
+  c = table[x%BASE];
+  rpl(x/BASE);
+  putc(c);
+}
 void myprintu(u16 x) {
 
   if(x)
@@ -169,7 +204,7 @@ void myprintp(u16 x) {
   default : myprintf(" ");
   }
 }
-void printl(u16 x) {
+/*void printl(u16 x) {
   if(x)
     rpu(x);
   else
@@ -184,6 +219,27 @@ void printX(u16 x) {
   BASE = 10;
 
 }
+*/
+
+void myprintl(u32 x){
+  if(x)
+    rpl(x);
+  else
+    putc('0');
+  putc(' ');
+  return;
+}
+
+void myprintX(u32 x){
+  BASE = 16;
+  putc('0');
+  putc('x');
+  rpl(x);
+  BASE = 10;
+
+}
+
+
 
 void myprintf(char *fmt, ...){
   char *cp = fmt;
@@ -206,6 +262,8 @@ void myprintf(char *fmt, ...){
     case 'd' : myprintd(*ip); break;
     case 'x' : myprintx(*ip); break;
     case 'p' : myprintp(*ip); break;
+    case 'l' : myprintl(*(u32 *)ip); break;
+    case 'X' : myprintX(*(u32 *)ip); break;
     }
     cp++; ip++;
   }
@@ -233,5 +291,28 @@ int put_proc(PROC **list, PROC *p) {
   p->status = FREE;
   p->next = *list;
   *list = p;
+}
+int tokenize(char *path, char delim){
+  char *cp,*wp;
+  int i;
+  //erase previous pathList
+  for(i=0;i<32;i++){
+    pathList[i] = 0;
+  }
+
+  cp = path;
+  wp = cp;
+
+  i=0;
+
+  while(*cp){
+    if(*cp == delim){
+      *cp = 0;
+      wp = cp+1;
+      pathList[i] = wp;
+      i++;
+    }
+    cp++;
+  }
 }
 #endif

@@ -7,17 +7,16 @@ main()
   while(1){
     pid = getpid();
     color = 0x0C;
-    printf("u1.c\n");       
+    printf("u2.c\n");       
     printf("----------------------------------------------\n");
-    printf("I am proc %d in U mode: running segment=%x\n",getpid(), getcs());
+    printf("THIS IS PROC %d in U MODE: SEGMENT=%x\n",getpid(), getcs());
     show_menu();
-    printf("Command ? ");
+    printf("COMMAND ? ");
     gets(name); 
     if (name[0]==0) 
         continue;
 
     cmd = find_cmd(name);
-    printf("%d\n",cmd);
     switch(cmd){
            case 0 : getpid();   break;
            case 1 : ps();       break;
@@ -27,6 +26,8 @@ main()
            case 5 : wait();     break;
            case 6 : exit();     break;
 
+// ADD fork, exec cases 
+//
            default: invalid(name); break;
     }
   }

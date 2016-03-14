@@ -13,6 +13,6 @@ cp mtx /mnt/boot
 umount /mnt
 rm *.o mtx
 
-(cd USER; ./mku u1)
+(cd USER; ./mku u1 u2)
 qemu-system-i386 -fda $VFD -no-fd-bootchk
 echo done

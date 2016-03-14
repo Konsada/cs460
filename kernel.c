@@ -16,7 +16,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   segment = (pid + 1)*0x1000;
   child->status = READY;
   child->priority = 1;        //priority = 1 for all proc except P0
-  child->ppid = running->pid; //parent = running
+  child->ppid = running->pid;//parent = running
   child->parent = running;
   child->uss = segment;
   child->usp = segment - 24;
@@ -40,10 +40,12 @@ PROC *kfork(char *filename) // create a child process, begin from body()
 
 int makeUimage(char *filename, PROC *p){
   u16 i, segment;
-
+  i=0;
   segment = (p->pid + 1)*0x1000;
-  load(filename, segment);
 
+
+  load(filename, segment);
+  while(pathList[i])printf("path[%d]:%s\n",i,pathList[i++]);
   for(i = 1; i <= 12; i++){
     put_word(0, segment, -2*i);
   }
@@ -172,15 +174,15 @@ int do_ps(){
   return 0;
 }
 
-int do_chname(char *y){
+int do_chname(char *newName){
   char buf[64];
   char *cp = buf;
   int count = 0;
 
   while(count < 32){
-    *cp = get_byte(running->uss, y);
+    *cp = get_byte(running->uss, newName);
     if(*cp == 0) break;
-    cp++; y++; count++;
+    cp++; newName++; count++;
   }
   buf[31] = 0;
 
