@@ -12,7 +12,6 @@
 #include "kernel.c"           // YOUR kernel.c file
 #include "int.c"              // YOUR int.c    file
 #include "loader.c"           // MY load.c     file
-int color;
 
 int init()
 {

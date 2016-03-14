@@ -99,6 +99,7 @@ int rflag;
 char fsbuf[BLKSIZE];
 char fsbuf2[BLKSIZE];
 char path[32];
+int color;
 
 char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter", 
                "Saturn", "Uranus", "Neptune" };

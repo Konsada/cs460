@@ -14,13 +14,18 @@ void myprintf(char *fmt, ...);
 // < 0 if s1 is less than s2 and > 0 if s1 is less than s2
 int mystrcmp(char *s1, char *s2){
   int i = 0;
+  myprintf("mystrcmp(%s, %s)\n", s1, s2);
+
   while(s1[i] && s2[i]){
     if(!(s1[i] - s2[i])) {
       i++;
     }
-    else
+    else{
+      //      myprintf("return: %d\n", (s1[i]-s2[i]));
       return s1[i] - s2[i];
+    }
   }
+  //  myprintf("return: %d\n", ((int)s1[i-1]-(int)s2[i-1]));
   return 0;
 }
 
@@ -29,7 +34,7 @@ u16 mystrncmp(char *s1, char *s2, u16 n){
   myprintf("mystrncmp()\n");
   myprintf("n: %d\n", n);
   while((s1[i] && s2[i]) && (i<n)){
-    if(!(s1[i] - s2[i])) {
+    if((s1[i] - s2[i]) == 0) {
       i++;
     }
     else
@@ -53,6 +58,13 @@ u16 mystrncpy(char **dest, char *src, u16 n){
   //  myprintf("copied: %s\n", dest);
 }
 
+/*u16 mystrcpy(char **dest, char *src){
+
+  while(*src){
+    **dest = (*src)++;
+  }
+}
+*/
 char *myfscanf(){
   char string[256];  
   char c = '\0';

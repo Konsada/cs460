@@ -1,11 +1,12 @@
 #include "type.h"
 #include "util.h"
 
-int load(char *filename, int segment){
+int load(char *filename, u16 segment){
   u16 iblk, i, nodeNumber;
   u16 pathCount = 0;
   u32 tsize, dsize, bsize, *temp;
 
+  printf("load(%s, %u)\n", filename, segment);
   strcpy(path, filename);
   tokenize(path, '/');
   while(pathList[pathCount++]);
@@ -14,6 +15,7 @@ int load(char *filename, int segment){
   gp = (GD*)fsbuf;
 
   iblk = (u16)gp->bg_inode_table;
+
   myprintf("bg_inode_table: %u\n", iblk);
 
   get_block(iblk, fsbuf);
@@ -30,10 +32,12 @@ int load(char *filename, int segment){
       myprintf("failed: %s path not found!\n", filename);
       return 0;
     }
-    myprintf("success: found %s\n", pathList[i]);
+    myprintf("success: found %s in inode %d\n", pathList[i], nodeNumber);
     nodeNumber --;
-    get_block((iblk+(nodeNumber/8)),fsbuf);
+
+    get_block((iblk+(nodeNumber/8)),fsbuf); //<--- problem child
     ip = (INODE *)fsbuf + (nodeNumber % 8);
+
   }
 
   get_block((u16)ip->i_block[0], fsbuf); //i_block[0] = header iblock
@@ -79,25 +83,31 @@ int get_block(u16 blk, char *buf){
 }
 
 int findInode(INODE *tip, char *name){
-  int i;
-  char debugBuf[64];
+  int i, n;
+  char debugBuf[255];
 
   for(i = 0; tip->i_block[i] && i < 12; i++){
     get_block((u16)tip->i_block[i], fsbuf);    
     dp = (DIR*)fsbuf;
-    myprintf("dp->inode: %l\n", dp->inode);
-    myprintf("dp->name_len: %u\n", dp->name_len);
+
     while((char*)dp< &fsbuf[BLKSIZE]){
       printf("searching...\n");
+      getc();
+      for(i = 0; i < 255; i++)
+	debugBuf[i] = 0;
+      myprintf("dp->inode:    %l\n", dp->inode);
+      strncpy(&debugBuf, dp->name, dp->name_len);
+      myprintf("dp->name:     %s\n", debugBuf);
+      myprintf("dp->name_len: %d\n", dp->name_len);
+      myprintf("dp->rec_len:  %d\n", dp->rec_len);
 
-            mystrncpy(&debugBuf, dp->name, dp->name_len);
-            myprintf("found: %s\n", debugBuf);
-
-            if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
-      if(!mystrcmp(debugBuf, name)){
+      //      if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
+      if(mystrcmp(debugBuf, name) == 0){	
+	myprintf("success: %s found!\n", debugBuf);
 	return (u16)dp->inode;
       }
-      dp = dp + dp->rec_len;
+      
+      dp = ((char *)dp + dp->rec_len);
     }
   }
   return -1;
