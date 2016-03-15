@@ -29,34 +29,49 @@ int load(char *filename, u16 segment){
   for(i = 0; i < pathCount; i++){
 
     myprintf("searching[%d:%d] for %s...\n", i,pathCount,pathList[i]);
-    nodeNumber = findInode(ip, pathList[i]);    if(nodeNumber < 0){
+    nodeNumber = findInode(ip, pathList[i]);    
+    if(nodeNumber < 0){
       myprintf("failed: %s path not found!\n", filename);
       return 0;
     }
     myprintf("success: found %s in inode %d\n", pathList[i], nodeNumber);
     nodeNumber --;
 
-    get_block((u16)(iblk+(nodeNumber/8)),fsbuf); //<--- problem child
+    get_block((u16)(iblk+(nodeNumber/8)),fsbuf); 
     ip = (INODE *)fsbuf + (nodeNumber % 8);
 
   }
-
   get_block((u16)ip->i_block[0], fsbuf); //i_block[0] = header iblock
+
+  myprintf("debug1\n");
+  getc();
 
   hp = (HEADER *)fsbuf;
 
-  tsize = hp->tsize;dsize = hp->dsize;bsize = hp->bsize;
+  tsize = hp->tsize;
+  dsize = hp->dsize;
+  bsize = hp->bsize;
 
+  myprintf("loading %s to segment %x\n", filename, segment);
   setes(segment);
+  getc();
 
   //load direct i_blocks to memory
   for(i = 0; i < 12; i++){
     if(!ip->i_block[i]){
       break;
     }
-    get_block((u16)ip->i_block[i],0);
+    getblk((u16)ip->i_block[i], 0);
+    //    get_block((u16)ip->i_block[i],0);
+    myprintf("inces()\n");
+    getc();
     inces();
+    myprintf("ip->i_block[%d]\n", i);
+    getc();
   }
+  myprintf("debug3\n");
+  getc();
+
   //load indirect i_blocks into buffer
   if(ip->i_block[12]){
     temp = (u32*)ip;
@@ -81,7 +96,7 @@ int get_block(u16 blk, char *buf){
   //diskr(cyl,head,sector,buf);
 
   diskr((blk/18), (((2*blk)%36)/18), (((2*blk)%36)%18), buf);
-  getc();
+
 }
 
 int findInode(INODE *tip, char *name){

@@ -13,7 +13,9 @@ PROC *kfork(char *filename) // create a child process, begin from body()
     return 0;
   }
   pid = child->pid;
-  segment = (pid + 1)*0x1000;
+
+  segment = (pid + 1)*1000;
+
   child->status = READY;
   child->priority = 1;        //priority = 1 for all proc except P0
   child->ppid = running->pid;//parent = running
@@ -42,7 +44,7 @@ int makeUimage(char *filename, PROC *p){
   u16 i, segment;
   i=0;
 
-  segment = (p->pid + 1)*0x1000;
+  segment = (p->pid + 1)*0x01000;
 
   myprintf("loading file %s onto segment %u with proc %d\n", filename, segment, p->pid);
   load(filename, segment);
