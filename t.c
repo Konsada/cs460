@@ -47,7 +47,7 @@ int scheduler()
     enqueue(&readyQueue, running);
   }
      running = dequeue(&readyQueue);
-     running->status = RUNNING;
+     running->status = RUNNING;	
      color = running->pid + 0x0A;
      rflag = 0;
 }

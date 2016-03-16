@@ -6,7 +6,8 @@ int load(char *filename, u16 segment){
   u16 pathCount = 0;
   u32 tsize, dsize, bsize, *temp;
 
-  printf("load(%s, %u)\n", filename, segment);
+  printf("load(%s, %x)\n", filename, segment);
+  getc();
   strcpy(path, filename);
   tokenize(path, '/');
   while(pathList[pathCount++]);
@@ -51,7 +52,7 @@ int load(char *filename, u16 segment){
   tsize = hp->tsize;
   dsize = hp->dsize;
   bsize = hp->bsize;
-
+  myprintf("hp->tsize: %l\nhp->dsize: %l\nhp->bsize: %l\n", tsize, dsize, bsize);
   myprintf("loading %s to segment %x\n", filename, segment);
   setes(segment);
   getc();
@@ -59,9 +60,14 @@ int load(char *filename, u16 segment){
   //load direct i_blocks to memory
   for(i = 0; i < 12; i++){
     if(!ip->i_block[i]){
+      myprintf("!ip->i_block[%d]: %x\n", i, ip->i_block[i]);
+      getc();
       break;
     }
-    getblk((u16)ip->i_block[i], 0);
+    myprintf("ip->i_block[%d] = %x\n", i, (u16)ip->i_block);
+    myprintf("getblk((u16)ip->i_block[%d], %x);", i, 0);
+    getc();
+    getblk((u16)ip->i_block[i], 0); //<--- not working properly
     //    get_block((u16)ip->i_block[i],0);
     myprintf("inces()\n");
     getc();
@@ -76,7 +82,7 @@ int load(char *filename, u16 segment){
   if(ip->i_block[12]){
     temp = (u32*)ip;
     while(*temp){
-      get_block((u16)*temp, 0);
+      get_block((u16)*temp, 0x0000);
       inces();
       temp++;
     }
@@ -94,8 +100,7 @@ int load(char *filename, u16 segment){
 
 int get_block(u16 blk, char *buf){
   //diskr(cyl,head,sector,buf);
-
-  diskr((blk/18), (((2*blk)%36)/18), (((2*blk)%36)%18), buf);
+  diskr(blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
 
 }
 
