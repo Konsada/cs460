@@ -126,7 +126,7 @@ int findInode(INODE *tip, char *name){
 
       //      if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
       if(mystrcmp(debugBuf, name) == 0){	
-	myprintf("success: %s found!\n", debugBuf);
+	myprintf("success: %s found in node %d!\n", debugBuf, dp->inode);
 	return (u16)dp->inode;
       }
       
