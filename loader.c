@@ -1,137 +1,183 @@
 #include "type.h"
 #include "util.h"
 
-int load(char *filename, u16 segment){
-  u16 iblk, i, nodeNumber;
-  u16 pathCount = 0;
-  u32 tsize, dsize, bsize, *temp;
+#define BLK 1024
+char b1[BLK], b2[BLK];
 
-  printf("load(%s, %x)\n", filename, segment);
-  getc();
-  strcpy(path, filename);
-  tokenize(path, '/');
-  while(pathList[pathCount++]);
-  pathCount--;
+u16 tsize, dsize, bsize, tot;
 
-  get_block(2, fsbuf); // put GD block into buf1;
-  gp = (GD*)fsbuf;
+u16 header(hp) HEADER *hp;
+{ 
+   tsize=hp->tsize; dsize=hp->dsize; bsize=hp->bsize; tot=hp->total_size;
+   /*******
+   printf("[tsize  dsize  bsize] = [%d  %d  %d]\n",
+                          tsize, dsize, bsize);
+   ************/
+}
 
+u16 getblk(blk, buf) u16 blk; char *buf;
+{
+    diskr( blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
+}
+
+u16 search(ip, name) INODE *ip; char *name;
+{
+   int i; char c;
+   DIR  *dp; 
+   for (i=0; i<12; i++){
+       if ( (u16)ip->i_block[i] ){
+          getblk((u16)ip->i_block[i], b2);
+          dp = (DIR *)b2;
+
+          while ((char *)dp < &b2[BLK]){
+              c = dp->name[dp->name_len];  // save last byte
+              dp->name[dp->name_len] = 0;   
+	      //printf("%s ", dp->name); 
+              if ( strcmp(dp->name, name) == 0 ){
+		// printf("\n"); 
+                 return((u16)dp->inode);
+              }
+              dp->name[dp->name_len] = c; // restore that last byte
+              dp = (char *)dp + dp->rec_len;
+	}
+     }
+   }
+   return 0;
+}
+
+u16 nn;
+char *name[32];  // at most 32 component names
+
+int breakup(path) char *path;
+{
+  int i;
+  char *cp;
+  cp = path;
+  nn = 0;
+  
+  while (*cp != 0){
+       while (*cp == '/') *cp++ = 0;        
+       if (*cp != 0)
+           name[nn++] = cp;         
+       while (*cp != '/' && *cp != 0) cp++;                  
+       if (*cp != 0)   
+           *cp = 0;                   
+       else 
+            break; 
+       cp++;
+  }
+  /*************
+  printf("n = %d : ", nn);
+  for (i=0; i<nn; i++)
+       printf("  %s  ", name[i]);
+  printf("\n");
+  **************/
+
+}
+
+char path[32];
+
+int load(filename, segment) char *filename; u16 segment;
+{ 
+  u16    i;
+  u16    me, blk, iblk;
+  char   *cp;
+  u32    *up;
+  INODE  *ip;
+  GD     *gp;
+
+  strcpy(path,filename);
+
+  //printf("loader : tokenlize pathname\n");
+  tokenize(path, '/');     // break up filename into nn string pointers
+                     // in name[i]
+  getblk(2, b1);
+  gp = (GD *)b1;
   iblk = (u16)gp->bg_inode_table;
+  //printf("iblk=%d\n", iblk);
+  getblk(iblk, b1);  /* read first inode block block */
+  ip = (INODE *)b1 +1;
 
-  myprintf("bg_inode_table: %u\n", iblk);
-
-  get_block(iblk, fsbuf);
-
-  ip = (INODE*)fsbuf + 1;
-
-  myprintf("i_uid: %d\n", ip->i_uid);
-  nodeNumber = iblk;
-
-  for(i = 0; i < pathCount; i++){
-
-    myprintf("searching[%d:%d] for %s...\n", i,pathCount,pathList[i]);
-    nodeNumber = findInode(ip, pathList[i]);    
-    if(nodeNumber < 0){
-      myprintf("failed: %s path not found!\n", filename);
-      return 0;
-    }
-    myprintf("success: found %s in inode %d\n", pathList[i], nodeNumber);
-    nodeNumber --;
-
-    get_block((u16)(iblk+(nodeNumber/8)),fsbuf); 
-    ip = (INODE *)fsbuf + (nodeNumber % 8);
-
-  }
-  get_block((u16)ip->i_block[0], fsbuf); //i_block[0] = header iblock
-
-  myprintf("debug1\n");
-  getc();
-
-  hp = (HEADER *)fsbuf;
-
-  tsize = hp->tsize;
-  dsize = hp->dsize;
-  bsize = hp->bsize;
-  myprintf("hp->tsize: %l\nhp->dsize: %l\nhp->bsize: %l\n", tsize, dsize, bsize);
-  myprintf("loading %s to segment %x\n", filename, segment);
-  setes(segment);
-  getc();
-
-  //load direct i_blocks to memory
-  for(i = 0; i < 12; i++){
-    if(!ip->i_block[i]){
-      myprintf("!ip->i_block[%d]: %x\n", i, ip->i_block[i]);
-      getc();
-      break;
-    }
-    myprintf("ip->i_block[%d] = %x\n", i, (u16)ip->i_block);
-    myprintf("getblk((u16)ip->i_block[%d], %x);", i, 0);
-    getc();
-    getblk((u16)ip->i_block[i], 0); //<--- not working properly
-    //    get_block((u16)ip->i_block[i],0);
-    myprintf("inces()\n");
-    getc();
-    inces();
-    myprintf("ip->i_block[%d]\n", i);
-    getc();
-  }
-  myprintf("debug3\n");
-  getc();
-
-  //load indirect i_blocks into buffer
-  if(ip->i_block[12]){
-    temp = (u32*)ip;
-    while(*temp){
-      get_block((u16)*temp, 0x0000);
-      inces();
-      temp++;
-    }
-  }
-
-  for(i = 0; i <= (tsize+dsize);i++)
-    put_word(get_word(segment+2,i),segment,i);
-
-  clear_bss(segment, tsize, dsize, bsize);
-
-  setes(0x1000);
-  myprintf("load done\n");
-  return 1;
-}
-
-int get_block(u16 blk, char *buf){
-  //diskr(cyl,head,sector,buf);
-  diskr(blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
-
-}
-
-int findInode(INODE *tip, char *name){
-  int i, n;
-  char debugBuf[255];
-
-  for(i = 0; tip->i_block[i] && i < 12; i++){
-    get_block((u16)tip->i_block[i], fsbuf);    
-    dp = (DIR*)fsbuf;
-
-    while((char*)dp< &fsbuf[BLKSIZE]){
-      printf("searching...\n");
-      
-
-      for(i = 0; i < 255; i++)
-	debugBuf[i] = 0;
-      myprintf("dp->inode:    %l\n", dp->inode);
-      strncpy(&debugBuf, dp->name, dp->name_len);
-      myprintf("dp->name:     %s\n", debugBuf);
-      myprintf("dp->name_len: %d\n", dp->name_len);
-      myprintf("dp->rec_len:  %d\n", dp->rec_len);
-
-      //      if(!mystrncmp(dp->name,name,(u16)dp->name_len)){
-      if(mystrcmp(debugBuf, name) == 0){	
-	myprintf("success: %s found!\n", debugBuf);
-	return (u16)dp->inode;
+  /* serach for system name */
+  for (i=0; i<2; i++){
+      me = search(ip, pathList[i]);
+      if (me == 0){
+          printf("loader: can't find %s\n", pathList[i]); 
+          return 0;    // for failure
       }
-      
-      dp = ((char *)dp + dp->rec_len);
-    }
+      me--;
+      getblk(iblk+(me/8), b1);      /* read block inode of me */
+      ip = (INODE *)b1 + (me % 8);
+   }
+
+  // get header information:
+  getblk((u16)ip->i_block[0], b2);
+
+  //printf("header information:\n");
+  header(b2);
+
+ /* read indirect block into b2, if any */
+  if (ip->i_block[12])
+      getblk((u16)ip->i_block[12], b2);
+
+  printf("loading %s to segment %x ....", filename, segment);
+  setes(segment);
+
+  //printf("loading direct blocks : \n");
+  for (i=0; i<12; i++){
+      if (ip->i_block[i]==0) 
+          break;
+      //printf("loading i_block[%d] = %d\n", i, (u16)ip->i_block[i]);
+      getblk((u16)ip->i_block[i], 0);
+      //putc('.');
+      inces();
   }
-  return -1;
+
+  // load indirect blocks if any
+   if ( (u16)ip->i_block[12]){
+     up = (u32 *)b2;
+     while(*up){
+       getblk((u16)*up, 0); //putc('.');
+        inces();
+        up++;
+     }
+   }
+   
+   //printf("move image upward 32 bytes\n");
+   move(segment, tsize, dsize);
+
+   //printf("clear bss to 0\n");
+   clear_bss(segment, tsize, dsize, bsize);
+
+   setes(0x1000);  // restore ES to MTX segment
+   printf(" done\n");
+   return 1;
+}  
+
+int move(segment, tsize, dsize) u16 segment, tsize, dsize;
+{
+  u16 i,w;
+  
+  for (i=0; i<=tsize+dsize; i+=2){
+      w = get_word(segment+2, i);
+      put_word(w, segment, i);
+  }
 }
+
+int clear_bss(segment, tsize, dsize, bsize) 
+u16 segment, tsize, dsize, bsize;
+{
+   u16 i,j, seg, tdsize, rem;
+
+   tdsize = tsize + dsize;
+   seg = segment + (tdsize)/16;
+
+   rem = tdsize % 16;
+
+   for (i=0; i<rem; i++)
+     put_byte(0, seg, i);
+
+   for (j=0; j<bsize; j++)
+    put_byte(0, seg, j + i);
+}
+
