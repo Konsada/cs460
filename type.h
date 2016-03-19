@@ -96,8 +96,6 @@ HEADER *hp;
 int procSize = sizeof(PROC);
 int nproc = 0;
 int rflag;
-char fsbuf[BLKSIZE];
-char fsbuf2[BLKSIZE];
 char path[32];
 int color;
 
