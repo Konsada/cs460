@@ -1,0 +1,8 @@
+int copyImage(u16 seg1, u16 seg2, u16 size){
+  int i; u16 temp;
+
+  for(i = 0; i < size; i++){
+    temp = get_word(seg1, 2*i);
+    put_word(temp, seg2, 2*i);
+  }
+}

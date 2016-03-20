@@ -11,7 +11,7 @@ int load(char *filename, u16 segment){
   u32  *temp;
 
   printf("load(%s, %x)\n", filename, segment);
-  getc();
+  //  getc();
   strcpy(path, filename);
   tokenize(path, '/');
   while(pathList[pathCount++]);
@@ -50,7 +50,7 @@ int load(char *filename, u16 segment){
   get_block((u16)ip->i_block[0], fsbuf2); //i_block[0] = header iblock -- works
 
   myprintf("debug1\n");
-  getc();
+  //  getc();
 
   hp = (HEADER *)fsbuf2;
 
@@ -65,24 +65,24 @@ int load(char *filename, u16 segment){
   for(i = 0; i < 12; i++){
     if(ip->i_block[i]){
       myprintf("!ip->i_block[%d]: %x\n", i, ip->i_block[i]);
-      getc();
+      //      getc();
     }
     else
       break;
 
     //    myprintf("ip->i_block[%d] = %x\n", i, (u16)ip->i_block);
     myprintf("getblk((u16)ip->i_block[%d], %x)...", i, 0);
-    getc();
+    //    getc();
     getblk((u16)ip->i_block[i], 0x0000); //<--- now working properly
     //    get_block((u16)ip->i_block[i],0);
     myprintf("inces()\n");
-    getc();
+    //    getc();
     inces();
     myprintf("ip->i_block[%d] written to memory!\n", i);
-    getc();
+    //    getc();
   }
   myprintf("debug3\n");
-  getc();
+  //  getc();
 
   //load indirect i_blocks into buffer
   myprintf("checking for indirect blocks...\n");
@@ -119,9 +119,9 @@ int get_block(u16 blk, char *buf){
   //diskr(cyl,head,sector,buf);
   
     myprintf("blk: %u, buf: %x\n", blk, buf);   
-    getc();
+    //    getc();
     myprintf("diskr(%d, %d, %d, %x)\n", blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
-    getc();
+    //    getc();
   
   //diskr(blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
   diskr( blk/18, ((2*blk)%36)/18, (((2*blk)%36)%18), buf);
@@ -133,10 +133,10 @@ int findInode(INODE *tip, char *name){
   char debugBuf[255];
 
   for(i = 0; tip->i_block[i] && i < 12; i++){
-    get_block((u16)tip->i_block[i], fsbuf);    
-    dp = (DIR*)fsbuf;
+    get_block((u16)tip->i_block[i], fsbuf2);    
+    dp = (DIR*)fsbuf2;
 
-    while((char*)dp< &fsbuf[BLKSIZE]){
+    while((char*)dp< &fsbuf2[BLKSIZE]){
       printf("searching...\n");
       
 
