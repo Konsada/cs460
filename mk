@@ -13,13 +13,13 @@ ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
 #echo ld86
 cp ../temp/$VFD ./
 
-mount -o loop $VFD /mnt
+sudo mount -o loop $VFD /mnt
 cp mtx /mnt/boot
 umount /mnt
 rm *.o mtx
 
 (cd USER; ./mku)
 
-#qemu-system-i386 -fda $VFD -no-fd-bootchk
+qemu-system-i386 -fda $VFD -no-fd-bootchk
 
 echo done

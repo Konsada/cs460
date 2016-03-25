@@ -128,11 +128,11 @@ int kmode();
 int do_ps();
 int do_chname(char *newName);
 int do_kkfork();
-/********** loader.c **********/
+/********** loader.c **********//*
 int load(char *filename, int segment);
 int get_block(u16 blk, char *buf);
 int findInode(INODE *tip, char *name);
-
+*/
 /********** t.c **********/
 int init();
 int scheduler();

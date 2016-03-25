@@ -21,7 +21,7 @@ main()
            case 0 : getpid();   break;
            case 1 : ps();       break;
            case 2 : chname();   break;
-           case 3 : kfork();    break;
+           case 3 : fork();    break;
            case 4 : kswitch();  break;
            case 5 : wait();     break;
            case 6 : exit();     break;

@@ -15,8 +15,8 @@ as86 -o u.o u.s
 ld86 -o u2 u.o u2.o ../mtxlib /usr/lib/bcc/libc.a
 
 mount -o loop $VFD /mnt
-cp $1 /mnt/bin/u1
-cp $2 /mnt/bin/u2
+cp u1.c /mnt/bin/u1.c
+cp u2.c /mnt/bin/u2.c
 umount /mnt
 
 rm *.o u1

@@ -96,15 +96,31 @@ int load(char *filename, u16 segment){
     }
   }
 
-  for(i = 0; i <= (tsize+dsize);i++)
+  printf("moving segment: %x to %x\n", segment, (segment+tsize+dsize));
+  move(segment, tsize, dsize);
+  /*
+  for(i = 0; i <= (tsize+dsize);i++){
+    printf("i = %d, totalsize = %d\n", i, (tsize+dsize));
     put_word(get_word(segment+2,i),segment,i);
-
+  }
+  */
   myprintf("clearing bss...\n");
   clear_bss(segment, tsize, dsize, bsize);
   myprintf("moving ES back to MTX segment...\n");
   setes(0x1000);
   myprintf("load done\n");
   return 1;
+}
+
+int move(u16 segment, u16 tsize, u16 dsize)
+{
+  u16 i,w;
+  
+  for (i=0; i<=32; i+=2){
+    //    printf("i: %u, segment: %x, tsize: %u, dsize: %u, total_size: %u\n", i, segment, tsize, dsize, (tsize+dsize));
+      w = get_word(segment+2, i);
+      put_word(w, segment, i);
+  }
 }
 
 int clear_buffer(char **buf){

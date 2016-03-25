@@ -83,10 +83,10 @@ int exec(char *filename){
 
   length = strlen(line) + 1;
   if(length % 2) length++;
-
+  printf("offset: %u\n", offset);
   offset = -length;
 
-  for (i = 0; i < len; i++)
+  for (i = 0; i < length; i++)
     put_byte(line[i], segment, offset + i);
 
   high = offset - 2;
