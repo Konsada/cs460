@@ -13,10 +13,12 @@
 #include "int.c"              // YOUR int.c    file
 #include "loader.c"           // MY load.c     file
 
+
+int body();
 int init()
 {
     PROC *p; int i;
-    color = 0x0C;
+    color = 0x0A;
     printf("init ....");
     for (i=0; i<NPROC; i++){   // initialize all procs
         p = &proc[i];
@@ -26,11 +28,11 @@ int init()
         strcpy(proc[i].name, pname[i]);
         p->next = &proc[i+1];
     }
-    freeList = &proc[0];      // all procs are in freeList
+    freeList = &proc[0];     
     proc[NPROC-1].next = 0;
     readyQueue = sleepList = 0;
 
-    /**** create P0 as running ******/
+    //setup P0 as running process
     p = get_proc(&freeList);
     p->status = RUNNING;
     p->ppid   = 0;
@@ -48,8 +50,6 @@ int scheduler()
   }
      running = dequeue(&readyQueue);
      running->status = RUNNING;	
-     color = running->pid + 0x0A;
-     rflag = 0;
 }
 
 int int80h();
@@ -63,10 +63,10 @@ int set_vector(u16 vector, u16 handler)
 int main()
 {
     printf("MTX starts in main()\n");
-    init();      // initialize and create P0 as running
+    init();
     set_vector(80, int80h);
 
-    kfork("/bin/u1");     // P0 kfork() P1
+    kfork("/bin/u1");     //kfork() P1 to /bin/u1
 
     while(1){
       printf("P0 running\n");

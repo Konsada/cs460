@@ -1,3 +1,5 @@
+#include "type.h"
+#include "util.h"
 
 /*************************************************************************
   usp  1   2   3   4   5   6   7   8   9  10   11   12    13  14  15  16
@@ -33,8 +35,10 @@ int kcinth()
   case 4 : r = ktswitch();       break;
   case 5 : r = kkwait(b);        break;
   case 6 : r = kkexit(b);        break;
+  case 7 : r = fork();           break;
+  case 8 : r = exec(b);          break;
 
-  case 99: kkexit(b);            break;
+  case 99: do_exit(b);            break;
   default: printf("invalid syscall # : %d\n", a); 
   }
 
@@ -65,7 +69,7 @@ int kchname(char *name)
 int kkfork()
 {
   printf("in kernel\n");
-  return do_kkfork();
+  return kmode();
 }
 
 int ktswitch()
@@ -76,11 +80,11 @@ int ktswitch()
 int kkwait(int *status)
 {
   printf("proc %d calling kwait\n", running->pid);
-  return kwait(&status);
+  return do_wait(status);
 }
 
 int kkexit(int value)
 {
   printf("in kernel\n");
-  return kexit(value);
+  return do_exit(value);
 }

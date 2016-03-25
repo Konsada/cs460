@@ -10,29 +10,29 @@ int copyImage(u16 seg1, u16 seg2, u16 size){
 int goUmode();
 
 int fork(){
-  PROC *child; u16 segment;
+  PROC *child; u16 childSegment;
 
   child = kfork(0);
   if(child == 0){
-    return -1;
+    return 0;
   }
 
-  segment = (child->pid + 1) * 0x1000;
-  myprintf("pid = %d segment = %x\n", child->pid, segment);
+  childSegment = (child->pid + 1) * 0x1000;
+  myprintf("pid = %d childSegment = %x\n", child->pid, childSegment);
 
-  copyImage(running->uss, segment, 32*1024);
+  copyImage(running->uss, childSegment, 32*1024);
 
-  child->uss = segment;
+  child->uss = childSegment;
   child->usp = running->usp;
 
-  put_word(segment, segment, child->usp);
-  put_word(segment, segment, child->usp+2);
-  put_word(0, segment, child->usp+2*8);
-  put_word(segment, segment, child->usp+2*10);
+  put_word(childSegment, childSegment, child->usp);
+  put_word(childSegment, childSegment, child->usp+2);
+  put_word(0, childSegment, child->usp+2*8);
+  put_word(childSegment, childSegment, child->usp+2*10);
   nproc++;
 
   printQueue(readyQueue, "readyQueue");
-  myprintf("Proc %d forked a child %d at segment = %x\n", running->pid, child->pid, segment);
+  myprintf("Proc %d forked a child %d at segment = %x\n", running->pid, child->pid, childSegment);
   return child->pid;
 }
 
@@ -58,19 +58,25 @@ int exec(char *filename){
   cq = f2;
 
   while(*cp == ' ')cp++;
-
-  while(*cp != ' ' && *cp != 0)
-    (*cq)++ = (*cp)++; // may not work
+  i = 0;
+  while(*cp != ' ' && *cp != 0 && i < 16){
+    *cq = *cp;
+    cq++;
+    cp++;
+    //*(cq++) = *(cp++); // may not work
+  }
   *cq = 0;
 
   if(f2[0] == 0) return -1;
+
+  myprintf("exec : cmd = %s len = %d\n", f2, strlen(f2));
 
   strcpy(file, "/bin/");
   strcat(file, f2);
 
   myprintf("Proc %d exec to %s in segment %x\n", running->pid, file, segment);
 
-  if(!loading(file, segment)){
+  if(!load(file, segment)){
     printf("exec %s failed\n", file);
     return -1;
   }

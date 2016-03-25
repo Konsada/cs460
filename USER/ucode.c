@@ -1,14 +1,14 @@
 // ucode.c file
 
-char *cmd[]={"getpid", "ps", "chname", "kfork", "switch", "wait", "exit", 0};
+char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", "fork", "exec", 0};
 
 #define LEN 64
 
 int show_menu()
 {
-   printf("***************** Menu *******************\n");
-   printf("*  ps  chname  kfork  switch  wait  exit *\n");
-   printf("******************************************\n");
+   printf("************************ Menu ************************\n");
+   printf("*  ps  chname  kmode  switch  wait  exit  fork  exec *\n");
+   printf("******************************************************\n");
 }
 
 int find_cmd(char *name)
@@ -29,36 +29,42 @@ int getpid()
 
 int ps()
 {
-  printf("entering the kernel to print processes...\n");
+  // printf("entering the kernel to print processes...\n");
    return syscall(1, 0, 0);
 }
 
 int chname()
 {
-    char s[32];
+    char s[64];
     printf("input new name : ");
     gets(s);
     return syscall(2, s, 0);
 }
 
-int kfork()
+int kmode() {
+  printf("kmode : enter Kmode via INT 80\n");
+  printf("proc %d going K mode ....\n", getpid());
+  syscall(3, 0, 0);
+  printf("proc %d back from Kernel\n", getpid());
+}
+
+int fork()
 {   
   int child, pid;
-  pid = getpid();
-  printf("proc %d enter kernel to kfork a child\n", pid); 
-  child = syscall(3, 0, 0);
-  if(child < 0)
+  //  pid = getpid();
+  //  printf("proc %d enter kernel to kfork a child\n", pid); 
+  child = syscall(7, 0, 0, 0);
+  if(!child)
     printf("kfork failed!\n");
   else
-    printf("proc %d kforked a child %d\n", pid, child);
+    printf("proc %d kforked a child %d\n", getpid(), child);
 }    
 
 int kswitch()
 {
-  int child;
-  printf("proc %d entering kernel to switch process\n", getpid());
+  printf("proc %d entering Kernel to switch process\n", getpid());
     return syscall(4,0,0);
-    printf("proc %d back form kernel\n", getpid());
+    printf("proc %d back form Kernel\n", getpid());
 }
 
 int wait()
@@ -92,10 +98,10 @@ int exit()
    exitValue = geti();
    printf("exitvalue=%d\n", exitValue);
    printf("enter kernel to die with exitValue=%d\n", exitValue);
-   _exit(exitValue);
+   _kexit(exitValue);
 }
 
-int _exit(int exitValue)
+int _kexit(int exitValue)
 {
   return syscall(6,exitValue,0);
 }
@@ -103,4 +109,17 @@ int _exit(int exitValue)
 int invalid(char *name)
 {
     printf("Invalid command : %s\n", name);
+}
+
+int exec(){
+  int r; 
+  char filename[32];
+  printf("enter exec filename : ");
+  gets(filename);
+  r = syscall(8, filename, 0, 0);
+  printf("exec failed\n");
+}
+
+int vfork(){
+  return syscall(9, 0, 0, 0);
 }

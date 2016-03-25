@@ -8,6 +8,7 @@ typedef unsigned long  u32;
 #define NPROC    9
 #define SSIZE 1024
 #define BLKSIZE 1024
+#define PROCNAMELEN 32
 
 /******* PROC status ********/
 #define FREE     0
@@ -99,6 +100,8 @@ int rflag;
 char path[32];
 int color;
 
+char *statusStrings[ ]  = {"FREE   ", "READY  ", "RUNNING", "STOPPED", "SLEEP  ", "ZOMBIE ", 0};
+
 char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter", 
                "Saturn", "Uranus", "Neptune" };
 /******************************/
@@ -118,8 +121,8 @@ PROC *kfork(char *filename);
 int makeUimage(char *filename, PROC *p);
 void do_tswitch();
 int do_kfork();
-int do_exit();
-int do_wait();
+int do_exit(int exitValue);
+int do_wait(int *ustatus);
 int body();
 int kmode();
 int do_ps();
@@ -141,8 +144,12 @@ int printQueue(PROC *queue, char *queueName);
 /********** wait.c **********/
 void ksleep(int event);
 int kwait(int *status);
-void ready(PROC *p);
+int ready(PROC *p);
 void kwakeup(int event);
 int kexit(int exitValue);
+/********** fork_exec.c **********/
+int copyImage(u16 seg1, u16 seg2, u16 size);
+int fork();
+int exec(char *filename);
 
 #endif

@@ -31,11 +31,11 @@ int kwait(int *status){
       printf("proc has no children!\n");
       return (-1);
     }
-    ksleep(running->event);
+    ksleep(running);
   }
 }
 
-void ready(PROC *p) {
+int ready(PROC *p) {
   p->event = 0;
   p->status = READY;
   enqueue(&readyQueue, p);
@@ -69,13 +69,17 @@ int kexit(int exitValue){
     if(p->status != FREE && p->ppid == running->pid){
       p->ppid = 1;
       p->parent = &proc[1];
+      wakeupP1 = 1;
     }
   }
+
+  strcpy(running->name, pname[running->pid]);
 
   running->exitCode = exitValue;
   running->status = ZOMBIE;
 
-  kwakeup(running->parent->event);
-  kwakeup(proc[1].event);
+  kwakeup(running->parent);
+  if(wakeupP1)
+    kwakeup(&proc[1]);
   tswitch();
 }
