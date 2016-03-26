@@ -9,7 +9,7 @@ bcc  -c -ansi t.c
 #bcc  -c -ansi int.c
 #bcc  -c -ansi fork_exec.c
 #ld86 -d -o mtx ts.o t.o kernel.o wait.o int.o fork_exec.o mtxlib /usr/lib/bcc/libc.a
-ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
+ld86  -d -o mtx ts.o t.o OBJ/*.o mtxlib /usr/lib/bcc/libc.a
 #echo ld86
 cp ../temp/$VFD ./
 

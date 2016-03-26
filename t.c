@@ -8,10 +8,11 @@
 /* #include "queue.c" */
 /* #include "loader.c" */
 
-#include "wait.c"             // YOUR wait.c   file
-#include "kernel.c"           // YOUR kernel.c file
+//#include "wait.c"             // YOUR wait.c   file
+//#include "kernel.c"           // YOUR kernel.c file
 #include "int.c"              // YOUR int.c    file
-#include "fork_exec.c"
+//#include "fork_exec.c"
+#include "timer.c"
 //#include "loader.c"           // MY load.c     file
 
 
@@ -27,6 +28,7 @@ int init()
         p->status = FREE;
         p->priority = 0;  
         strcpy(proc[i].name, pname[i]);
+	p->inkmode = 1;
         p->next = &proc[i+1];
     }
     freeList = &proc[0];     
@@ -54,6 +56,7 @@ int scheduler()
 }
 
 int int80h();
+int tinth();
 int set_vector(u16 vector, u16 handler)
 {
      // put_word(word, segment, offset)
@@ -68,6 +71,9 @@ int main()
     set_vector(80, int80h);
 
     kfork("/bin/u1");     //kfork() P1 to /bin/u1
+    lock();
+    set_vec(8,tinth);
+    timer_init();
 
     while(1){
       printf("P0 running\n");

@@ -22,10 +22,8 @@ typedef unsigned long  u32;
 typedef struct proc{
     struct proc *next;
     int    *ksp;               // at offset 2
-
     int    uss, usp;           // at offsets 4,6
     int    inkmode;            // at offset 8
-
     int    pid;                // add pid for identify the proc
     int    status;             // status = FREE|READY|RUNNING|SLEEP|ZOMBIE    
     int    ppid;               // parent pid
@@ -34,7 +32,7 @@ typedef struct proc{
     int    event;
     int    exitCode;
     char   name[32];           // name string of PROC
-
+    int    time;
     int    kstack[SSIZE];      // per proc stack area
 }PROC;
 
