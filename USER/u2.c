@@ -17,6 +17,7 @@ main()
         continue;
 
     cmd = find_cmd(name);
+    printf("%d\n", cmd);
     switch(cmd){
            case 0 : getpid();   break;
            case 1 : ps();       break;
