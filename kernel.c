@@ -33,7 +33,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   for (i = 1; i < 10; i++)          // saved CPU registers
     child->kstack[SSIZE-i] = 0; 
 
-  child->kstack[SSIZE-1] = (int)goUmode; // resume point = address of body()
+  child->kstack[SSIZE-1] = (int)body; // resume point = address of body()
 
   child->ksp = &(child->kstack[SSIZE-9]);   // proc saved sp
 
@@ -58,13 +58,15 @@ int makeUimage(char *filename, PROC *p){
 
   segment = (p->pid + 1)*0x1000;
 
-  myprintf("loading file %s onto segment %u with proc %d\n", filename, segment, p->pid);
+  myprintf("loading file %s onto segment %x with proc %d\n", filename, segment, p->pid);
   load(filename, segment);
 
-  while(pathList[i])printf("path[%d]:%s\n",i,pathList[i++]);
+  //  while(pathList[i])printf("path[%d]:%s\n",i,pathList[i++]);
+
   for(i = 1; i <= 12; i++){
     put_word(0, segment, -2*i);
   }
+
   put_word(0x0200, segment, -2*1);
   put_word(segment, segment, -2*2);
   put_word(segment, segment, -2*11);
@@ -125,6 +127,7 @@ int do_wait(int *ustatus){
   put_word(status, running->uss, ustatus);
   return pid;
 }
+int color;
 
 int body()
 { 
@@ -147,16 +150,11 @@ int body()
     myprintf("%c\n", c);
 
     switch(c){
-    case 's': 
-      do_tswitch();break;
-    case 'f': 
-      do_kfork();break;
-    case 'w' :
-      do_wait();break;
-    case 'q': 
-      do_exit();break;
-    case 'u' : 
-      goUmode();break;
+    case 's':  do_tswitch();  break;
+    case 'f':  do_kfork();    break;
+    case 'w' : do_wait();     break;
+    case 'q' : do_exit();     break;
+    case 'u' : goUmode();     break;
     }
   }
 }

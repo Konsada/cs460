@@ -69,12 +69,12 @@ int kchname(char *name)
 int kkfork()
 {
   printf("in kernel\n");
-  return kmode();
+  kmode();
 }
 
 int ktswitch()
 {
-  return tswitch();
+  tswitch();
 }
 
 int kkwait(int *status)

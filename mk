@@ -1,6 +1,6 @@
 echo -------------------- mk --------------------
 
-VFD=mtximage
+VFD=./mtximage
 
 as86 -o ts.o ts.s
 bcc  -c -ansi t.c
@@ -14,9 +14,9 @@ ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
 cp ../temp/$VFD ./
 
 sudo mount -o loop $VFD /mnt
-cp mtx /mnt/boot
-umount /mnt
-rm *.o mtx
+sudo cp mtx /mnt/boot
+sudo umount /mnt
+sudo rm *.o mtx
 
 (cd USER; ./mku)
 

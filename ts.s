@@ -1,8 +1,8 @@
         MTXSEG  = 0x1000
 	
        .globl _main,_running,_scheduler
-       .globl _proc, _procSize
-       .globl _tswitch
+       .globl _proc, _procSize, _color
+       .globl _tswitch, _getc, _putc,_getbp
 	
         jmpi   start,MTXSEG
 
@@ -47,6 +47,8 @@ RESUME:
 	
 ! added functions for KUMODE
 	.globl _int80h,_goUmode,_kcinth
+	.globl _diskr,_setes,_inces
+	.globl _printf
 !These offsets are defined in struct proc
 USS =   4
 USP =   6
@@ -66,14 +68,14 @@ _int80h:
         push cs
         pop  ds                 ! KDS now
 
-	mov bx,_running  	! ready to access proc
-        mov USS[bx],ss          ! save uSS  in proc.USS
-        mov USP[bx],sp          ! save uSP  in proc.USP
+	mov si,_running  	! ready to access proc
+        mov USS[si],ss          ! save uSS  in proc.USS
+        mov USP[si],sp          ! save uSP  in proc.USP
 
 ! Change ES,SS to kernel segment
-        mov  ax,ds              ! stupid !!        
-        mov  es,ax              ! CS=DS=SS=ES in Kmode
-        mov  ss,ax
+        mov  di,ds              ! stupid !!        
+        mov  es,di              ! CS=DS=SS=ES in Kmode
+        mov  ss,di
 
 ! set sp to HI end of running's kstack[]
 	mov  sp,_running        ! proc's kstack [2 KB]
@@ -85,8 +87,8 @@ _int80h:
 _goUmode:
         cli
 	mov bx,_running 	! bx -> proc
-        mov ax,USS[bx]
-        mov ss,ax               ! restore uSS
+        mov cx,USS[bx]
+        mov ss,cx               ! restore uSS
         mov sp,USP[bx]          ! restore uSP
   
 	pop ds
@@ -146,3 +148,22 @@ error:
         call _printf
         int  0x19                       ! reboot
 msg:    .asciz  "Loading Error!"
+
+_getbp:
+	mov  ax, bp
+	ret
+	
+_getc:
+	xorb ah,ah
+	int  0x16
+	ret
+
+_putc:
+	push bp
+	mov  bp,sp
+	movb al,4[bp]
+	movb ah,#14
+	mov  bx,_color
+	int  0x10
+	pop  bp
+	ret
