@@ -26,8 +26,8 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   child->ppid = running->pid;//parent = running
   child->parent = running;
 
-  child->uss = segment;
-  child->usp = segment - 24;
+  //  child->uss = segment;
+  //  child->usp = segment - 24;
 
   /* Initialize new proc's kstack[ ] */
   for (i = 1; i < 10; i++)          // saved CPU registers
@@ -46,6 +46,11 @@ PROC *kfork(char *filename) // create a child process, begin from body()
     //    makeUimage("/bin/u1", child);
     makeUimage(filename, child);
   }
+  else{
+    copyImage(running->uss, segment, 32 * 1024);
+  }
+  child->uss = segment;
+  child->usp = segment - 24;
 
   printf("Proc %d forked a child %d at segment=%x\n", running->pid, child->pid, segment);
 
@@ -63,17 +68,17 @@ int makeUimage(char *filename, PROC *p){
 
   //  while(pathList[i])printf("path[%d]:%s\n",i,pathList[i++]);
 
-  for(i = 1; i <= 12; i++){
-    put_word(0, segment, -2*i);
+  for(i = 1; i < 13; i++){
+    put_word(0, segment, segment - 2*i);
   }
 
-  put_word(0x0200, segment, -2*1);
-  put_word(segment, segment, -2*2);
-  put_word(segment, segment, -2*11);
-  put_word(segment, segment, -2*12);
+  put_word(0x0200, segment, segment - 2*1);
+  put_word(segment, segment, segment - 2*2);
+  put_word(segment, segment, segment - 2*11);
+  put_word(segment, segment, segment - 2*12);
 
-  p->usp = -2*12;
-  p->uss = segment;
+  //  p->usp = -2*12;
+  //  p->uss = segment;
   return 0;
 }
 
@@ -87,7 +92,7 @@ int do_kfork(){
   PROC *child = 0;
 
   myprintf("proc %d kfork a child\n", running->pid);
-  child = kfork("/u1");
+  child = kfork("/bin/u1");
   if(child){
     myprintf("child pid = %d\n", child->pid);
     return child->pid;
