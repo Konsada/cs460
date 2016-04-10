@@ -28,8 +28,13 @@ main()
            case 6 : exit();     break;
            case 7 : fork();     break;
            case 8 : exec();     break;
-// ADD fork, exec cases 
-//
+
+    case 9:  pipe(); break;
+    case 10: pfd();  break;
+    case 11: read_pipe(); break;
+    case 12: write_pipe(); break;
+    case 13: close_pipe(); break;
+
            default: invalid(name); break;
     }
   }

@@ -18,14 +18,33 @@ typedef unsigned long  u32;
 #define SLEEP    4
 #define ZOMBIE   5
 
-/********** kernel.c wait.c t.c struct **********/
+/******* PIPE MODE *********/
+#define READ_PIPE  4
+#define WRITE_PIPE 5
+
+/******** OFT GLOBALS ********/
+#define NOFT      20
+#define NFD       10
+
+/******** PIPE GLOBALS *******/
+#define PSIZE     10
+#define NPIPE     10
+
+/********** PIPE STRUCT **********/
+typedef struct pipe{
+  char buf[PSIZE];
+  int head, tail, data, room;
+  int nreader, nwriter;
+  int busy;
+} PIPE;
+
+/********** PROC STRUCT **********/
 typedef struct proc{
     struct proc *next;
     int    *ksp;               // at offset 2
 
     int    uss, usp;           // at offsets 4,6
     int    inkmode;            // at offset 8
-
     int    pid;                // add pid for identify the proc
     int    status;             // status = FREE|READY|RUNNING|SLEEP|ZOMBIE    
     int    ppid;               // parent pid
@@ -35,8 +54,17 @@ typedef struct proc{
     int    exitCode;
     char   name[32];           // name string of PROC
 
+    OFT *fd[NFD];
+
     int    kstack[SSIZE];      // per proc stack area
 }PROC;
+
+/********** OFT STRUCT **********/
+typedef struct Oft{
+  int mode;
+  int refCount;
+  struct pipe *pipe_ptr;
+} OFT;
 
 /**********loader.c structs **********/
 typedef struct ext2_group_desc {
@@ -90,6 +118,8 @@ typedef struct head{
 
 /********** GLOBALS **********/
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;
+OFT oft[NOFT];
+PIPE pipe[NPIPE];
 GD *gp;
 DIR *dp;
 INODE *ip;

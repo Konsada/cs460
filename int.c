@@ -38,6 +38,14 @@ int kcinth()
   case 7 : r = fork();           break;
   case 8 : r = exec(b);          break;
 
+/****** these are YOUR pipe functions ************/
+   case 30 : r = kpipe(b); break;
+   case 31 : r = read_pipe(b,c,d);  break;
+   case 32 : r = write_pipe(b,c,d); break;
+   case 33 : r = close_pipe(b);     break;
+   case 34 : r = pfd();             break;
+  /**************** end of pipe functions ***********/
+
   case 99: do_exit(b);            break;
   default: printf("invalid syscall # : %d\n", a); 
   }

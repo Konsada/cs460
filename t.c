@@ -12,35 +12,47 @@
 #include "kernel.c"           // YOUR kernel.c file
 #include "int.c"              // YOUR int.c    file
 #include "fork_exec.c"
-//#include "loader.c"           // MY load.c     file
+#include "pipe.c"
+//#include "loader.c"           // MY load.c file header is too big
 
 
 int body();
-int init()
-{
-    PROC *p; int i;
-    color = 0x0A;
-    printf("init ....");
-    for (i=0; i<NPROC; i++){   // initialize all procs
-        p = &proc[i];
-        p->pid = i;
-        p->status = FREE;
-        p->priority = 0;  
-        strcpy(proc[i].name, pname[i]);
-        p->next = &proc[i+1];
-    }
-    freeList = &proc[0];     
-    proc[NPROC-1].next = 0;
-    readyQueue = sleepList = 0;
+int init(){
+  PROC *p; int i,j;
+  color = 0x0A;
+  printf("init ....");
+  for (i=0; i<NPROC; i++){   // initialize all procs
+    p = &proc[i];
+    p->pid = i;
+    p->status = FREE;
+    p->priority = 0;  
+    strcpy(proc[i].name, pname[i]);
+    p->next = &proc[i+1];
 
-    //setup P0 as running process
-    p = get_proc(&freeList);
-    p->status = RUNNING;
-    p->ppid   = 0;
-    p->parent = p;
-    running = p;
-    nproc = 1;
-    printf("done\n");
+    // clear fd[ ] array of PROC
+    for(j=0; j<NFD; j++){
+      p->fd[j] = 0;
+    }
+  }
+  freeList = &proc[0];     
+  proc[NPROC-1].next = 0;
+  readyQueue = sleepList = 0;
+
+  // initialize all OFT and PIPE structures
+  for (i = 0; i < NOFT; i++){
+    oft[i].refCount = 0;
+  }
+  for (i = 0; i < NPIPE; i++){
+    pipe[i].busy = 0;
+  }
+  //setup P0 as running process
+  p = get_proc(&freeList);
+  p->status = RUNNING;
+  p->ppid   = 0;
+  p->parent = p;
+  running = p;
+  nproc = 1;
+  printf("done\n");
 } 
 
 int scheduler()

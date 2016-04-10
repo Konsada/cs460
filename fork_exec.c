@@ -26,7 +26,20 @@ int fork(){
   myprintf("child->usp: %x\n", child->usp);
   copyImage(running->uss, childSegment, 32*1024);
   myprintf("copying image from %x to %x child segment of size %u\n", running->uss, childSegment, (32*1024));
- 
+
+  // YOUR CODE to make the child runnable in User mode
+
+  /**** Copy file descriptors ****/
+  for (i=0; i<NFD; i++){
+    child->fd[i] = running->fd[i];
+    if (child->fd[i] != 0){
+      child->fd[i]->refCount++;
+      if (child->fd[i]->mode == READ_PIPE)
+	child->fd[i]->pipe_ptr->nreader++;
+      else if (child->fd[i]->mode == WRITE_PIPE)
+	child->fd[i]->pipe_ptr->nwriter++;
+    }
+  }
   put_word(childSegment, childSegment, child->usp);
   put_word(childSegment, childSegment, child->usp+2);
   put_word(0, childSegment, child->usp+2*8);
