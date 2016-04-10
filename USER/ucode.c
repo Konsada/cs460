@@ -57,24 +57,24 @@ int fork()
   if(!child)
     printf("kfork failed!\n");
   else
-    printf("proc %d kforked a child %d\n", getpid(), child);
+    printf("proc %u kforked a child %d\n", getpid(), child);
 }    
 
 int kswitch()
 {
-  printf("proc %d entering Kernel to switch process\n", getpid());
+  printf("proc %u entering Kernel to switch process\n", getpid());
     return syscall(4,0,0);
-    printf("proc %d back form Kernel\n", getpid());
+    printf("proc %u back form Kernel\n", getpid());
 }
 
 int wait()
 {
     int child, exitValue;
-    printf("proc %d enter Kernel to wait for a child to die\n", getpid());
+    printf("proc %u enter Kernel to wait for a child to die\n", getpid());
     child = syscall(5, &exitValue, 0);
-    printf("proc %d back from wait, dead child=%d", getpid(), child);
+    printf("proc %u back from wait, dead child=%u", getpid(), child);
     if (child>=0)
-        printf("exitValue=%d", exitValue);
+        printf("exitValue=%u", exitValue);
     printf("\n"); 
 } 
 
@@ -96,8 +96,8 @@ int exit()
    //   gets(input);
    //   exitValue = getint(input);
    exitValue = geti();
-   printf("exitvalue=%d\n", exitValue);
-   printf("enter kernel to die with exitValue=%d\n", exitValue);
+   printf("exitvalue=%u\n", exitValue);
+   printf("enter kernel to die with exitValue=%u\n", exitValue);
    _kexit(exitValue);
 }
 

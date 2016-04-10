@@ -18,13 +18,15 @@ int fork(){
   }
 
   childSegment = (child->pid + 1) * 0x1000;
-  myprintf("pid = %d childSegment = %x\n", child->pid, childSegment);
-
-  copyImage(running->uss, childSegment, 32*1024);
+  myprintf("childPid = %d childSegment = %x\n", child->pid, childSegment);
 
   child->uss = childSegment;
+  myprintf("child->uss: %x\n", child->uss);
   child->usp = running->usp;
-
+  myprintf("child->usp: %x\n", child->usp);
+  copyImage(running->uss, childSegment, 32*1024);
+  myprintf("copying image from %x to %x child segment of size %u\n", running->uss, childSegment, (32*1024));
+ 
   put_word(childSegment, childSegment, child->usp);
   put_word(childSegment, childSegment, child->usp+2);
   put_word(0, childSegment, child->usp+2*8);
@@ -32,7 +34,7 @@ int fork(){
   nproc++;
 
   printQueue(readyQueue, "readyQueue");
-  myprintf("Proc %d forked a child %d at segment = %x\n", running->pid, child->pid, childSegment);
+  myprintf("Proc %u forked a child %u at segment = %x\n", running->pid, child->pid, childSegment);
   return child->pid;
 }
 
