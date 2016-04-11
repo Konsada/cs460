@@ -85,10 +85,10 @@ _int80h:
         jmp   _goUmode
   
 _goUmode:
-        cli
+	cli
 	mov bx,_running 	! bx -> proc
-        mov cx,USS[bx]
-        mov ss,cx               ! restore uSS
+        mov ax,USS[bx]
+        mov ss,ax               ! restore uSS
         mov sp,USP[bx]          ! restore uSP
   
 	pop ds

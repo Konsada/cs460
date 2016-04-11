@@ -1,22 +1,18 @@
 echo -------------------- mk --------------------
 
-VFD=./mtximage
+VFD=mtximage
 
 as86 -o ts.o ts.s
 bcc  -c -ansi t.c
-#bcc  -c -ansi kernel.c
-#bcc  -c -ansi wait.c
-#bcc  -c -ansi int.c
-#bcc  -c -ansi fork_exec.c
-#ld86 -d -o mtx ts.o t.o kernel.o wait.o int.o fork_exec.o mtxlib /usr/lib/bcc/libc.a
 ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
-#echo ld86
-sudo cp ../temp/$VFD ./
 
-sudo mount -o loop $VFD /mnt
-sudo cp mtx /mnt/boot
-sudo umount /mnt
-sudo rm *.o mtx
+rm $VFD
+cp ../temp/$VFD $VFD
+
+mount -o loop $VFD /mnt
+cp mtx /mnt/boot
+umount /mnt
+rm *.o mtx
 
 (cd USER; ./mku)
 

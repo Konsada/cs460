@@ -29,8 +29,10 @@ int fork(){
   myprintf("copying image from %x to %x child segment of size %u\n", running->uss, childSegment, (32*1024));
 
   // YOUR CODE to make the child runnable in User mode
+  child->kstack[SSIZE-1] = (int)body;
+  child->ksp = &(child->kstack[SSIZE-9]);
 
-  /**** Copy file descriptors ****/
+  /**** Copy file descriptors ****//*
   for (i=0; i<NFD; i++){
     child->fd[i] = running->fd[i];
     if (child->fd[i] != 0){
@@ -41,6 +43,8 @@ int fork(){
 	child->fd[i]->pipe_ptr->nwriter++;
     }
   }
+  */
+
   put_word(childSegment, childSegment, child->usp);
   put_word(childSegment, childSegment, child->usp+2);
   put_word(0, childSegment, child->usp+2*8);
