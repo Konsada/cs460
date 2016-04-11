@@ -7,10 +7,11 @@ int copyImage(u16 seg1, u16 seg2, u16 size){
   }
 }
 
-int goUmode();
+extern int goUmode();
 
 int fork(){
   PROC *child; u16 childSegment;
+  int i;
 
   child = kfork(0);
   if(child == 0){

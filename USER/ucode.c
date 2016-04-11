@@ -1,6 +1,6 @@
 // ucode.c file
 
-char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", "fork", "exec", 0};
+char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", "fork", "exec", "pipe", "pfd", "read", "write", 0};
 
 #define LEN 64
 
@@ -132,7 +132,9 @@ int pd[2];
 int pipe()
 {
    printf("pipe syscall\n");
-   syscall(30, pd, 0);
+   if(syscall(30, pd, 0) < 0){
+     printf("kpipe failed!\n");
+   }
    printf("proc %d created a pipe with fd = %d %d\n", 
            getpid(), pd[0], pd[1]);
 }

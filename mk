@@ -11,7 +11,7 @@ bcc  -c -ansi t.c
 #ld86 -d -o mtx ts.o t.o kernel.o wait.o int.o fork_exec.o mtxlib /usr/lib/bcc/libc.a
 ld86  -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
 #echo ld86
-cp ../temp/$VFD ./
+sudo cp ../temp/$VFD ./
 
 sudo mount -o loop $VFD /mnt
 sudo cp mtx /mnt/boot

@@ -19,8 +19,8 @@ typedef unsigned long  u32;
 #define ZOMBIE   5
 
 /******* PIPE MODE *********/
-#define READ_PIPE  4
-#define WRITE_PIPE 5
+#define READ_PIPE  0
+#define WRITE_PIPE 1
 
 /******** OFT GLOBALS ********/
 #define NOFT      20
@@ -38,6 +38,13 @@ typedef struct pipe{
   int busy;
 } PIPE;
 
+/********** OFT STRUCT **********/
+typedef struct Oft{
+  int mode;
+  int refCount;
+  struct pipe *pipe_ptr;
+} OFT;
+
 /********** PROC STRUCT **********/
 typedef struct proc{
     struct proc *next;
@@ -54,17 +61,10 @@ typedef struct proc{
     int    exitCode;
     char   name[32];           // name string of PROC
 
-    OFT *fd[NFD];
+    OFT    *fd[NFD];
 
     int    kstack[SSIZE];      // per proc stack area
 }PROC;
-
-/********** OFT STRUCT **********/
-typedef struct Oft{
-  int mode;
-  int refCount;
-  struct pipe *pipe_ptr;
-} OFT;
 
 /**********loader.c structs **********/
 typedef struct ext2_group_desc {
