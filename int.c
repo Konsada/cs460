@@ -18,6 +18,7 @@ int kcinth()
 {
   u16 segment, offset;
   int a,b,c,d, r;
+  int i;
 
   segment = running->uss;
   offset = running->usp;
@@ -39,7 +40,7 @@ int kcinth()
   case 8 : r = exec(b);          break;
 
 /****** these are YOUR pipe functions ************/
-   case 30 : r = kpipe(b); break;
+   case 30 : r = kpipe(&b);         break; 
    case 31 : r = read_pipe(b,c,d);  break;
    case 32 : r = write_pipe(b,c,d); break;
    case 33 : r = close_pipe(b);     break;
@@ -47,10 +48,12 @@ int kcinth()
   /**************** end of pipe functions ***********/
 
   case 99: do_exit(b);            break;
-  default: printf("invalid syscall # : %d\n", a); 
+  default: 
+    printf("invalid syscall # : %c\n", a);
+    getc();
   }
-
-  put_word(r, segment, offset + 2*AX);
+  //  printf("put_word(r, segment, offset + 2*AX) : put_word(%d, %x, %x + %d)\n", r, segment, offset, (2*AX));
+  put_word(r, segment, offset - 2*AX);
 
 }
 

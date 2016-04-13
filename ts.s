@@ -87,8 +87,8 @@ _int80h:
 _goUmode:
 	cli
 	mov bx,_running 	! bx -> proc
-        mov ax,USS[bx]
-        mov ss,ax               ! restore uSS
+        mov cx,USS[bx]
+        mov ss,cx               ! restore uSS
         mov sp,USP[bx]          ! restore uSP
   
 	pop ds

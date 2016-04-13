@@ -1,6 +1,6 @@
 // ucode.c file
 
-char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", "fork", "exec", "pipe", "pfd", "read", "write", 0};
+char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", "fork", "exec", "pipe", "pfd", "read", "write", "close", 0};
 
 #define LEN 64
 
@@ -8,9 +8,10 @@ int show_menu()
 {
    printf("************************ Menu ************************\n");
    printf("*  ps  chname  kmode  switch  wait  exit  fork  exec *\n");
+   //         1   2       3      4       5     6     7     8
    printf("******************************************************\n");
    printf("*  pipe  pfd   read   write   close                 *\n");
-   //   9     10    11      12     13    
+   //         9     10    11      12     13    
    printf("*****************************************************\n");
 }
 
@@ -18,7 +19,7 @@ int find_cmd(char *name)
 {
   int i;
   for(i = 0; cmd[i]; i++){
-    //    printf("%d\n");
+    printf("%d\n");
     if(!strcmp(name, cmd[i]))
       return i;
   }
@@ -133,10 +134,10 @@ int pd[2];
 int pipe()
 {
    printf("pipe syscall\n");
-   if(syscall(30, pd, 0) < 0){
+   if(syscall(30, &pd, 0) < 0){
      printf("kpipe failed!\n");
    }
-   printf("proc %d created a pipe with fd = %d %d\n", 
+   printf("proc %d created a pipe with fd = %u %u\n", 
            getpid(), pd[0], pd[1]);
 }
 

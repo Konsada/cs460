@@ -153,7 +153,7 @@ int body()
     //  printProcs();
     myprintf("--------------------------------------------------\n");
     myprintf("proc %d [%d ] running: parent=%d\n",running->pid,running->priority, running->parent->pid);
-    myprintf("enter a char [s|f|w|q|u] : ");
+    myprintf("enter a char: [s|f|w|q|u] : ");
     c = getc();
     myprintf("%c\n", c);
 

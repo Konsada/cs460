@@ -45,6 +45,8 @@ int kpipe(int pd[2])
   OFT *oft0;
   OFT *oft1;
   int i;
+
+  printf("We are in da kernel man!\n");
   //search for open pipe
   for(i = 0; i < NPIPE; i++){
     if(!pipe[i].busy)
@@ -97,6 +99,7 @@ int kpipe(int pd[2])
     if(running->fd[i] == 0 && running->fd[i+1] == 0){
       running->fd[i] = oft0;
       running->fd[i+1] = oft1;
+      break;
     }
   }
   if(i == NFD){
@@ -109,8 +112,9 @@ int kpipe(int pd[2])
     return -1;
   }
   //allocate return values
-  pd[0] = i;
-  pd[1] = i+1;
+  put_word(i, running->uss, p[0]);
+  put_word(i + 1, running->uss, p[1]);
+
   printf("do_pipe : file descriptors = [%d %d]\n", pd[0], pd[1]);
   return 0;
 }
