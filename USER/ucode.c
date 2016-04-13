@@ -18,6 +18,7 @@ int find_cmd(char *name)
 {
   int i;
   for(i = 0; cmd[i]; i++){
+    //    printf("%d\n");
     if(!strcmp(name, cmd[i]))
       return i;
   }
