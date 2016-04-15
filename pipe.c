@@ -49,8 +49,10 @@ int kpipe(int pd[2])
   printf("We are in da kernel man!\n");
   //search for open pipe
   for(i = 0; i < NPIPE; i++){
-    if(!pipe[i].busy)
+    if(!pipe[i].busy){
+      printf("pipe[%d] found!\n", i);     
       break;
+    }
   }
   //all pipes are busy
   if(i == NPIPE) {
@@ -111,6 +113,8 @@ int kpipe(int pd[2])
     p->nwriter = 0;
     return -1;
   }
+  printf("running->uss: %x\n", running->uss);
+
   //allocate return values
   put_word(i, running->uss, p[0]);
   put_word(i + 1, running->uss, p[1]);
