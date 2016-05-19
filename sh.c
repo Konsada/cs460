@@ -6,9 +6,16 @@ char *cp, *cq, *cpp, *cqq;
 char *cmds[8], cmdline[1024];
 int numCmds;
 
+/*void catcher(){
+  exec("sh");
+  printf("catching...\n");
+  return;
+}
+*/
 main(int argc, char *argv[]){
   int i = 0;
   int status;
+
   signal(2, 1);
 
   printf("Keon's sh!\n");
@@ -124,12 +131,12 @@ main(int argc, char *argv[]){
     pid = fork();
 
     if(pid){
-      printf(" parent sh %d is waiting for kitten\n", getpid());
+      printf(" parent %d is waiting for kitten\n", getpid());
       pid = wait(&status);
       continue;
     }
     else{
-      printf("kitten sh %d is running cmd: %s\n", getpid(), cmdline);
+      printf("kitten %d is running cmd: %s\n", getpid(), cmdline);
       do_pipe(cmdline, 0);
     }    
   }
@@ -174,6 +181,7 @@ int do_pipe(char *cmdLine, int *rightpd)
       printf("proc %d pipe creation failed miserably...\n", getpid());
       exit(1);
     }
+    printf("do_pipe %d forks a child\n", getpid());
     pid = fork();
     if(pid < 0){
       printf("proc %d failed to fork a kitten\n", getpid());
@@ -184,11 +192,13 @@ int do_pipe(char *cmdLine, int *rightpd)
       close(0);
       dup(leftpd[0]); 
       close(leftpd[0]);
-
+      printf("parent %d will do_command(%s)\n", getpid(), tail);
       do_command(tail);
     }
-    else // recursively call do_pipe
+    else{ // recursively call do_pipe
+      printf("kitten %d will do_pipe(%s, %d)!\n", pid, cmdLine, leftpd);
       do_pipe(cmdLine, leftpd);
+    }
   }
   else{ // no pipes, just do command
     do_command(cmdLine);  
@@ -203,11 +213,13 @@ int help(){
   printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 }
 
+char headCmd[64], execLine[64];
+
 int do_command(char *cmdLine)
 {
   //  scan cmdLine for I/O redirection symbols;
   //  do I/O redirections;
-  char *p, *q, filename[64], *cmds[16], arguments[64], headCmd[64];
+  char *p, *q, filename[64], *cmds[16], arguments[64];
   int i, j, savedIndex, numCmds;
   p = cmdLine;
   printf("do_command(cmdLine:%s)\n", cmdLine);
@@ -294,6 +306,20 @@ int do_command(char *cmdLine)
   eatpat(cmdLine, headCmd, cmds, &numCmds);
   savedIndex = numCmds;
 
+  for (i = 0; i<numCmds; i++){
+    if (strcmp(cmds[i], ">>")==0){
+      printf("append ouput found!\n");
+      if (savedIndex > i) savedIndex = i;
+      if (cmds[i+1]==0){
+	printf("append redirection failed!\n");
+	exit(4);
+      }
+      close(1);
+      open(cmds[i+1], O_WRONLY|O_CREAT|O_APPEND);
+      break;
+    }
+  }
+
   for(i = 0; i < numCmds; i++){
     if(strcmp(cmds[i], "<") == 0){
       printf("redirect input found!\n");
@@ -311,20 +337,20 @@ int do_command(char *cmdLine)
       break;
     }
   }
-  for(i = 0; i < numCmds; i++){
-    if(strcmp(cmds[i], ">") == 0){
+  for (i = 0; i < numCmds; i++){
+    if (strcmp(cmds[i], ">") == 0){
       printf("redirect output found!\n");
-      if(savedIndex > i) savedIndex = i;
-      if(cmds[i+1] == 0){
-	printf("ouput redirection failed!\n");
+      if (savedIndex > i) savedIndex = i;          // I = index of first > or < or >>
+      if (cmds[i+1] == 0){
+	printf("ouput redirection failed\n");
 	exit(3);
       }
       close(1);
-      printf("open(filename:%s, O_WRONLY|O_CREAT)\n", cmds[i+1]);
       open(cmds[i+1], O_WRONLY|O_CREAT);
       break;
-    }
+    } 
   }
+  /*
   for(i = 0; i < numCmds; i++){
     if(strcmp(cmds[i], ">>") == 0){
       printf("append output found!\n");
@@ -339,13 +365,41 @@ int do_command(char *cmdLine)
       break;
     }
   }
-  strcpy(headCmd, cmds[0]);
-  for(j = 1; j < savedIndex; j++){
-    strcat(headCmd, " ");
-    strcat(headCmd, name[j]);
+  */
+  i = 0;
+  while(cmds[i]){
+    printf("cmds[%d]: %s\n",i,cmds[i]);
+    i++;
   }
-  printf("exec(headCmd:%s)\n", headCmd);
-  exec(headCmd);
+
+  for(i = 0; i < 64; i++)execLine[i] = 0;
+
+  strcpy(execLine, cmds[0]);
+  printf("execLine: %s, cmds[0]: %s\n", execLine, cmds[0]);
+  printf("numCmds:%d\n",numCmds);
+  printf("savedIndex: %d\n", savedIndex);
+
+  for(j = 1; j < savedIndex; j++){
+    strcat(execLine, " ");
+    strcat(execLine, cmds[j]);
+    printf("execLine: %s, cmds[%d]\n", execLine,j);
+  }
+    //    printf("Only 2 cmds\n");
+    //    for(i = 0; execLine[i]; i++);
+    //    headCmd[i] = ' ';
+    //    i++;
+    //    strcpy(execLine[i]," ");
+    //    i++;
+    //    strcpy(execLine[i], cmds[1]);
+    //    headCmd[i] = 0;
+
+    //    for(j = 0; cmds[1][j] != 0;j++){
+      //      headCmd[i+j] = cmds[1][j];  p
+    //    }
+    //    headCmd[i+j] = 0;
+  
+  printf("exec(execLine:%s)\n", execLine);
+  exec(execLine);
 }
 
 int scan(char *head, char **tail)

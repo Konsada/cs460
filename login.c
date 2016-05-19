@@ -22,7 +22,7 @@ main(int argc, char *argv[]){
 
   signal(2, 1);
 
-  printf("Keon's login: open %s as stdin, stdout, stderr\n", tty);
+  printf("Keon's login: tty: %s\n", tty);
 
   while(1){
     // ask user for login credentials
