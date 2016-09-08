@@ -6,7 +6,7 @@ typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
-void myprintf(char *fmt, ...){
+void printf(char *fmt, ...){
   char *cp = fmt;
   u16 *ip = (u16 *)&fmt+1;
   u16 *up;
