@@ -1,6 +1,3 @@
-#ifndef UTIL_H
-#define UTIL_H
-
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
@@ -77,4 +74,3 @@ void printl(u16 x) {
   else
     putchar('0');
 }
-#endif

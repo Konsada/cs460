@@ -4,6 +4,14 @@
 #define  MAG    13
 #define  YELLOW 14
 
+typedef unsigned short u8;
+typedef unsigned int u16;
+typedef unsigned long u32;
+
+typedef struct ext2_super_block SUPER;
+typedef struct ext2_group_desc GD;
+typedef struct ext2_inode INODE;
+typedef struct ext2_dir_entry_2 DIR;
 
 struct partition {         // Partition table entry in MBR
 	u8  drive;          // 0x80 - active 
