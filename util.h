@@ -1,10 +1,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-typedef unsigned char u8;
-typedef unsigned int u16;
-typedef unsigned long u32;
-
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
 
@@ -80,13 +76,5 @@ void printl(u16 x) {
     rpu(x);
   else
     putchar('0');
-}
-
-void printX(u16 x) {
-  BASE = 16;
-  putchar('0');
-  putchar('x');
-  rpu(x);
-  BASE = 10;
 }
 #endif

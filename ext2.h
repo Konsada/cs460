@@ -1,3 +1,5 @@
+#ifndef EXT2_H
+#define EXT2_H
 
 typedef struct ext2_super_block {
   u32	s_inodes_count;		/* Inodes count */
@@ -77,4 +79,4 @@ typedef struct ext2_dir_entry_2 {
   u8	file_type;
   char	name[255];      	/* File name */
 } DIR;
-
+#endif

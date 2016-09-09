@@ -4,7 +4,6 @@
 #define  MAG    13
 #define  YELLOW 14
 
-#include "ext2.h"
 
 struct partition {         // Partition table entry in MBR
 	u8  drive;          // 0x80 - active 
@@ -36,6 +35,7 @@ u16 color = RED;           // initial color for putc()
 
 // #include "bio.c" <========= WRITE YOUR OWN io.c file !!!!
 #include "util.h"          // contains my io
+#include "ext2.h"
 
 char mbr[512];
 char ans[64];
