@@ -1,7 +1,3 @@
-typedef unsigned char  u8;
-typedef unsigned short u16;
-typedef unsigned long  u32;
-
 #define  GREEN  10         // color byte for putc()
 #define  CYAN   11
 #define  RED    12
