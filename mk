@@ -1,21 +1,14 @@
 clear
 clear
 
-VFD=FDimage
+sudo cp ../disk/FDimage ./FDimage
 
-as86 -o ts.o ts.s
-bcc  -c -ansi t.c util.h
-ld86 -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
+VFD=./FDimage
 
-sudo mount -o loop $VFD /mnt
+as86 -o bs.o bs.s
+bcc  -c -ansi bc.c util.h
+ld86 -d -o keonbooter bs.o bc.o /usr/lib/bcc/libc.a
 
-sudo rm /mnt/boot/*
+dd if=keonbooter of=$VFD bs=1024 count=1 conv=notrunc
 
-sudo cp mtx /mnt/boot/
-sudo umount /mnt
-
-echo ready to go?
-read dummy
-
-qemu-system-i386 -fda FDimage -no-fd-bootchk
-
+qemu-system-i386 -fda $VFD -no-fd-bootchk
