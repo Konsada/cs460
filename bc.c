@@ -67,9 +67,9 @@ main()
   dp->s2 = 0;             // high 4-byte address s2=0
 
   getSector((u32)0, (u16)mbr); // get MBR
-  printf("show partition table\n");
+  printf("Keon's Partition Table Printer\n");
 	p = (struct partition *)(&mbr[0x1BE]);
-	printf("part#    type    start_sector    #sectors\n");
+	printf("part#    type    start_sector    nr_sectors\n");
 	printf("----------------------------------------\n");
 	for(i = 1; i<=4; i++)
 	{
