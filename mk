@@ -1,21 +1,13 @@
 clear
 clear
 
-VFD=FDimage
+VFD=vdisk
 
 as86 -o ts.o ts.s
 bcc  -c -ansi t.c util.h
-ld86 -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
+ld86 -d -o mtx ts.o t.o /usr/lib/bcc/libc.a
 
 sudo mount -o loop $VFD /mnt
 
-sudo rm /mnt/boot/*
-
-sudo cp mtx /mnt/boot/
-sudo umount /mnt
-
-echo ready to go?
-read dummy
-
-qemu-system-i386 -fda FDimage -no-fd-bootchk
+qemu-system-i386 -fda $VFD -no-fd-bootchk
 
