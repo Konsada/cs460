@@ -5,11 +5,12 @@
 	
         jmpi   start,OSSEG
 
-start:	mov  ax,cs
+start:	
+  mov  ax,cs
 	mov  ds,ax
 	mov  ss,ax
 
-        mov  sp,#_proc
+  mov  sp,#_proc
 	add  sp,_procSize
 
 	call _main
@@ -25,6 +26,7 @@ SAVE:
 	push si
 	push di
 	pushf
+	
 	mov  bx,_running
 	mov  2[bx],sp
 
