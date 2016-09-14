@@ -26,8 +26,8 @@ SAVE:
 	push si
 	push di
 	pushf
-	push ds
-	push ss
+	!push ds
+	!push ss
 	mov  bx,_running
 	mov  2[bx],sp
 
@@ -36,8 +36,8 @@ FIND:	call _scheduler
 RESUME:
 	mov  bx,_running
 	mov  sp,2[bx]
-	pop ss
-	pop ds
+	!pop ss
+	!pop ds
 	popf
 	pop  di
 	pop  si
