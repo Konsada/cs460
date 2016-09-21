@@ -133,7 +133,7 @@ int printQueue(PROC *queue, char *queueName) {
   PROC *p = queue;
 
   if(!p){
-    myprintf("Queue is empty!\n");
+    myprintf("%s is empty!\n", queueName);
     return 0;
   }
 
