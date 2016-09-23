@@ -126,7 +126,16 @@ int rpu (u16 x) {
   }
 }
 
-
+int rpl(u32 x)
+{
+  char c;
+  if(x)
+  {
+    c = table[x%BASE];
+    rpl=(x/BASE);
+    putc(c);
+  }
+}
 void myprintu(u16 x) {
 
   if(x)
@@ -176,7 +185,7 @@ void printl(u16 x) {
     putc('0');
 }
 
-void printX(u16 x) {
+void printX(u32 x) {
   BASE = 16;
   putc('0');
   putc('x');
@@ -206,6 +215,8 @@ void myprintf(char *fmt, ...){
     case 'd' : myprintd(*ip); break;
     case 'x' : myprintx(*ip); break;
     case 'p' : myprintp(*ip); break;
+    case 'l' : printl(*(u32 *)ip++); break;
+    case 'X' : printX(*(u32 *)ip++); break;
     }
     cp++; ip++;
   }
