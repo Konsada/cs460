@@ -132,7 +132,7 @@ int rpl(u32 x)
   if(x)
   {
     c = table[x%BASE];
-    rpl=(x/BASE);
+    rpl(x/BASE);
     putc(c);
   }
 }

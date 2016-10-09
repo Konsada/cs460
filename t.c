@@ -11,6 +11,8 @@
 #include "wait.c"             // YOUR wait.c   file
 #include "kernel.c"           // YOUR kernel.c file
 #include "int.c"              // YOUR int.c    file
+#include "hop.c"    	      // Problem 5.6
+
 int color;
 
 int init()
