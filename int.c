@@ -1,4 +1,3 @@
-
 /*************************************************************************
   usp  1   2   3   4   5   6   7   8   9  10   11   12    13  14  15  16
 ----------------------------------------------------------------------------
@@ -33,7 +32,9 @@ int kcinth()
   case 4 : r = ktswitch();       break;
   case 5 : r = kkwait(b);        break;
   case 6 : r = kkexit(b);        break;
-
+  case 7 : r = vfork();		 break;
+  case 8 : r = exec(b);		 break;
+  case 9 : r = hop(b); 		 break;
   case 99: kkexit(b);            break;
   default: printf("invalid syscall # : %d\n", a); 
   }

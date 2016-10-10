@@ -13,6 +13,6 @@ sudo cp mtx /mnt/boot
 sudo umount /mnt
 sudo rm *.o mtx
 
-(sudo cd USER; ./mku u1)
+(cd USER;echo ./mku u1)
 qemu-system-i386 -fda $VFD -no-fd-bootchk
 echo done

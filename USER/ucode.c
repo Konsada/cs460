@@ -1,14 +1,14 @@
 // ucode.c file
 
-char *cmd[]={"getpid", "ps", "chname", "kfork", "switch", "wait", "exit", 0};
+char *cmd[]={"getpid", "ps", "chname", "switch", "wait", "exit", "fork", "exec", "hop" 0};
 
 #define LEN 64
 
 int show_menu()
 {
-   printf("***************** Menu *******************\n");
-   printf("*  ps  chname  kfork  switch  wait  exit *\n");
-   printf("******************************************\n");
+   printf("***************** Menu *****************************\n");
+   printf("*  ps  chname  switch  wait  exit  fork  exec  hop*\n");
+   printf("****************************************************\n");
 }
 
 int find_cmd(char *name)
@@ -114,7 +114,7 @@ e.g. 0×4000. Devise an algorithm for the hop() syscall, and implement it in
 MTX to satisfy the lusts of Casanova processes.
 */
 
-int hop(u16 segment){
+int dohop(){
 
 }
 

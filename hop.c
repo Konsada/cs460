@@ -1,3 +1,2 @@
-int hop(){
-
+int hop(u16 segment){
 }
