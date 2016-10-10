@@ -12,7 +12,7 @@ void myprintf(char *fmt, ...);
 int mystrcmp(char *s1, char *s2);
 int strtok(char *path);
 int mystrcpy(char dest[], char sorce[]);
-
+/*
 int strtok(char *path){
   char *cp;
   cp = path;
@@ -31,6 +31,7 @@ int strtok(char *path){
   }
   myprintf("pathname broken into %d names\n", nameCount);
 }
+*/
 int mystrcpy(char *dest, char *source){
   int i = 0;
   myprintf("mystrcpy(%s)\n", source);

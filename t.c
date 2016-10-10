@@ -59,7 +59,7 @@ int set_vector(u16 vector, u16 handler)
 {
      // put_word(word, segment, offset)
      put_word(handler, 0, vector<<2);
-     put_word(0x1000,  0,(vector<<2) + 2);
+     put_word((0x1000/2),  0,(vector<<2) + 2);
 }
             
 int main()
@@ -72,7 +72,7 @@ int main()
 
     while(1){
       printf("P0 running\n");
-      if(nproc==2 && proc[1].status != READY)
+      if(NPROC==2 && proc[1].status != READY)
 	myprintf("no runable process, system halts\n");
       while(!readyQueue);
       printf("P0 switch process\n");

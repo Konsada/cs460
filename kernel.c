@@ -13,7 +13,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
     return 0;
   }
   pid = child->pid;
-  segment = (pid + 1)*0x1000;
+  segment = (pid + 1)*(0x1000/2);
   child->status = READY;
   child->priority = 1;        //priority = 1 for all proc except P0
   child->ppid = running->pid; //parent = running
@@ -24,7 +24,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
   child->kstack[SSIZE-1] = (int)body; // resume point = address of body()
 
   /* Initialize new proc's kstack[ ] */
-  for (i = 1; i < 10; i++)          // saved CPU registers
+  for (i = 1; i < 18; i++)          // saved CPU registers
     child->kstack[i] = 0; 
 
   child->ksp = &(child->kstack[SSIZE-9]);   // proc saved sp
@@ -41,7 +41,7 @@ PROC *kfork(char *filename) // create a child process, begin from body()
 int makeUimage(char *filename, PROC *p){
   u16 i, segment;
 
-  segment = (p->pid + 1)*0x1000;
+  segment = (p->pid + 1)*(0x1000/2);
   load(filename, segment);
 
   for(i = 1; i <= 12; i++){

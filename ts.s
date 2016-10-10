@@ -1,4 +1,4 @@
-        MTXSEG  = 0x1000
+        MTXSEG  = (0x1000/2)
 	
        .globl _main,_running,_scheduler
        .globl _proc, _procSize
