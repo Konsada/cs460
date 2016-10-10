@@ -74,5 +74,4 @@ char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter",
                "Saturn", "Uranus", "Neptune" };
 
 int body();
-
 #endif

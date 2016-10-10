@@ -1,14 +1,44 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-//typedef unsigned char u8;
-//typedef unsigned int u16;
 char *table = "0123456789ABCDEF";
 u16 BASE = 10;
+u16 nameCount = 0;
+char *name[32];
+char pathname[128];
+char buf[1024];
 
 void myprintf(char *fmt, ...);
 int mystrcmp(char *s1, char *s2);
-
+int strtok(char *path);
+int mystrcpy(char dest[], char sorce[]);
+/*
+int strtok(char *path){
+  char *cp;
+  cp = path;
+  nameCount = 0;
+  myprintf("tok(%s)\n", path);
+  while(*cp != 0) {
+    while(*cp == '/') *cp++ = 0;
+    if(*cp != 0)
+      name[nameCount++] = cp;
+    while(*cp != '/' && *cp != 0) cp++;
+    if(*cp != 0)
+      *cp = 0;
+    else
+      break;
+    cp++;
+  }
+  myprintf("pathname broken into %d names\n", nameCount);
+}
+*/
+int mystrcpy(char *dest, char *source){
+  int i = 0;
+  myprintf("mystrcpy(%s)\n", source);
+  while(source[i]) dest[i] = source[i++];
+  dest[i] = 0;
+  return 0;
+}
 // < 0 if s1 is less than s2 and > 0 if s1 is less than s2
 int mystrcmp(char *s1, char *s2){
   int i = 0;
