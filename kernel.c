@@ -1,278 +1,291 @@
-#include "type.h"
-#include "util.h"
+/********************************************************************
+Copyright 2010-2015 K.C. Wang, <kwang@eecs.wsu.edu>
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-PROC *kfork(char *filename) // create a child process, begin from body()
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************/
+extern int goUmode();
+
+int makeUimage(char *filename, PROC *p)
 {
-  int i, segment,pid;
-  PROC *child = 0;
-
-  child = get_proc(&freeList);
-
-  if(!child) {
-    printf("no more PROC, kfork() failed\n");
-    return 0;
-  }
-  pid = child->pid;
-  segment = (pid + 1)*(0x1000/2);
-  child->status = READY;
-  child->priority = 1;        //priority = 1 for all proc except P0
-  child->ppid = running->pid; //parent = running
-  child->parent = running;
-  child->uss = segment;
-  child->usp = segment - 24;
-
-  child->kstack[SSIZE-1] = (int)body; // resume point = address of body()
-
-  /* Initialize new proc's kstack[ ] */
-  for (i = 1; i < 18; i++)          // saved CPU registers
-    child->kstack[i] = 0; 
-
-  child->ksp = &(child->kstack[SSIZE-9]);   // proc saved sp
-  enqueue(&readyQueue, child);        // enter p into readyQueue by priority
-  nproc++;
-
-  if(filename){
-    makeUimage("/bin/u1", child);
-  }
-
-  return child;
-}
-
-int makeUimage(char *filename, PROC *p){
   u16 i, segment;
 
-  segment = (p->pid + 1)*(0x1000/2);
+  // make Umode image by loading /u1 into segment
+  segment = (p->pid + 1)*0x1000;
   load(filename, segment);
 
-  for(i = 1; i <= 12; i++){
-    put_word(0, segment, -2*i);
-  }
-  put_word(0x0200, segment, -2*1);
-  put_word(segment, segment, -2*2);
-  put_word(segment, segment, -2*11);
-  put_word(segment, segment, -2*12);
+  /***** Fill in U mode information in proc *****/
+  /**************************************************
+    We know segment=0x2000 + index*0x1000 ====>
+    ustack is at the high end of this segment, say TOP.
+    We must make ustak contain:
+          1   2   3  4  5  6  7  8  9 10 11 12
+       flag uCS uPC ax bx cx dx bp si di es ds
+     0x0200 seg  0  0  0  0  0  0  0  0 seg seg
+  
+    So, first a loop to set all to 0, then
+    put_word(seg, segment, -2*i); i=2,11,12;
+   **************************************************/
+ 
+   for (i=1; i<=12; i++){
+       put_word(0, segment, -2*i);
+   }
 
-  p->usp = -2*12;
-  p->uss = segment;
-  return 0;
+   put_word(0x0200,  segment, -2*1);   /* flag */  
+   put_word(segment, segment, -2*2);   /* uCS */
+   put_word(segment, segment, -2*11);  /* uES */
+   put_word(segment, segment, -2*12);  /* uDS */
+
+   /* initial USP relative to USS */
+   p->usp = -2*12; 
+   p->uss = segment;
+   return 0;
 }
 
-void do_tswitch(){
-  myprintf("proc %d tswitch()\n", running->pid);
+/***********************************************************
+  kfork() creates a child proc and returns the child pid.
+  When scheduled to run, the child process resumes to body();
+************************************************************/
+PROC *kfork(char *filename)
+{
+  PROC *p;
+  int  i, child;
+  u16  segment;
+
+  /*** get a PROC for child process: ***/
+  if ( (p = get_proc(&freeList)) == NULL){
+       printf("no more proc\n");
+       return 0;
+  }
+
+  /* initialize the new proc and its stack */
+  p->status = READY;
+  p->ppid = running->pid;
+  p->parent = running;
+  p->priority  = 1;                 // all of the same priority 1
+  p->inkmode = 1;
+
+  // clear all SAVed registers on stack
+  for (i=1; i<10; i++)
+      p->kstack[SSIZE-i] = 0;
+ 
+  // fill in resume address
+  //p->kstack[SSIZE-1] = (int)goUmode;
+  p->kstack[SSIZE-1] = (int)body;         // start in Kmode
+  p->ksp = &(p->kstack[SSIZE - 9]);
+
+  enqueue(&readyQueue, p);
+  printList("readyQueue ", readyQueue);
+  nproc++;
+  segment = (p->pid+1)*0x1000;
+
+  if (filename){
+     /******** create Umode image *******************/
+     segment = 0x1000*(p->pid+1);
+     makeUimage(filename, p);
+  }
+  printf("Proc %d forked a child %d at segment=%x\n",
+          running->pid, p->pid, segment);
+  return p;
+}
+
+int do_tswitch()
+{
+  printf("proc %d tswitch()\n", running->pid);
   tswitch();
-  myprintf("proc %d resumes\n", running->pid);
+  printf("proc %d resumes\n", running->pid);
 }
 
-int do_kfork(){
-  PROC *child = 0;
-
-  myprintf("proc %d kfork a child\n", running->pid);
-  child = kfork("/bin/u1");
-  if(child){
-    myprintf("child pid = %d\n", child->pid);
-    return child->pid;
-  }
+int do_kfork()
+{
+  PROC *p;
+  printf("proc%d kfork a child\n");
+  p = kfork("/bin/u1");
+  if (p == 0)
+    printf("kfork failed\n");
   else
-    myprintf("Failed fork\n");
-  return -1;
+    printf("child pid = %d\n", p->pid);
 }
 
-int do_exit(){
-  int exitValue = 0;
-  char *input;
-
-  if(running->pid == 1 && nproc > 2){
-    myprintf("other procs still exist, P1 can't die yet!\n");
-    return -1;
+int do_exit(int exitValue)
+{
+  //int exitValue;
+  if (running->pid == 1 && nproc > 2){
+      printf("other procs still exist, P1 can't die yet !%c\n",007);
+      return -1;
   }
-  myprintf("Please enter an exitValue: ");
-  gets(input);
-  //  myprintf("\ngets(%s) complete\n", input);
-  exitValue = getint(input);
-  // myprintf("%d = getint(%x) complete\n", exitValue, input);
-  myprintf("\n%d\n", exitValue);
+  /***************************************
+  printf("enter an exitValue (0-9) : ");
+  exitValue = (getc()&0x7F) - '0'; 
+  printf("%d\n", exitValue);
+  **************************************/
   kexit(exitValue);
 }
 
-int do_wait(){
-  int pid, status;
-  pid = kwait(&status);
-  //  myprintf("waiting [pid: %d | status %d]\n", pid, status);
-  if(pid<0){
-    myprintf("proc %d wait error : no child\n", running->pid);
+int do_wait(int *ustatus)
+{
+  int child, status;
+  child = kwait(&status);
+  if (child<0){
+    printf("proc %d wait error : no child\n", running->pid);
     return -1;
   }
-  myprintf("proc %d found a ZOMBIE child %d exitValue=%d\n", running->pid, pid, status);
-  return pid;
+  printf("proc %d found a ZOMBIE child %d exitValue=%d\n", 
+	   running->pid, child, status);
+  // write status to Umode *ustatus
+  put_word(status, running->uss, ustatus);
+  return child;
 }
 
 int body()
-{ 
-  char c = '\0';
-  //  color = running->pid + 10;
-  myprintf("proc %d resumes to body()\n", running->pid);
-  while(1){
-    //    color = running->pid + 10;
-    //  printQueues();
-    myprintf("--------------------------------------------------\n");
-    printQueue(freeList, "freeList");
-    printQueue(readyQueue, "readyQueue");
-    printQueue(sleepList, "sleepList");
-    printQueue(zombieList, "zombieList");
-    //  printProcs();
-    myprintf("--------------------------------------------------\n");
-    myprintf("proc %d [%d ] running: parent=%d\n",running->pid,running->priority, running->parent->pid);
-    myprintf("enter a char [s|f|w|q|u] : ");
-    c = getc();
-    myprintf("%c\n", c);
+{
+  char c;
+  printf("proc %d resumes to body()\n", running->pid);
 
+  while(1){
+    printf("-----------------------------------------\n");
+    printList("freelist  ", freeList);
+    printList("readyQueue", readyQueue);
+    printList("sleepList ", sleepList);
+    printf("-----------------------------------------\n");
+
+    printf("proc %d running: parent = %d  enter a char [s|f|w|q|u] : ", 
+	   running->pid, running->parent->pid);
+    c = getc(); printf("%c\n", c);
     switch(c){
-    case 's': 
-      do_tswitch();break;
-    case 'f': 
-      do_kfork();break;
-    case 'w' :
-      do_wait();break;
-    case 'q': 
-      do_exit();break;
-    case 'u' : 
-      goUmode();break;
+       case 's' : do_tswitch();   break;
+       case 'f' : do_kfork();     break;
+       case 'w' : do_wait();      break;
+       case 'q' : do_exit();      break;
+       case 'u' : goUmode();      break;
     }
   }
 }
 
-int kmode(){
+
+int color;
+extern int loader();
+
+extern PROC proc[];
+int kmode()
+{
   body();
 }
-char *statusStrings[ ]  = {"FREE   ", "READY  ", "RUNNING", "STOPPED", "SLEEP  ", "ZOMBIE ", 0};
-int do_ps(){
-  int i, j;
-  char *p, *q, buf[16];
-  printf("do_ps()\n");
-  buf[15] = 0;
 
-  myprintf("========================================\n");
-  myprintf("  name        status     pid     ppid  \n");//2 name 8 status 5 pid 5 ppid
-  myprintf("----------------------------------------\n");
+char *hh[ ] = {"FREE   ", "READY  ", "RUNNING", "STOPPED", "SLEEP  ", 
+               "ZOMBIE ",  0}; 
+int do_ps()
+{
+   int i,j; 
+   char *p, *q, buf[16];
+   buf[15] = 0;
 
-  for(i = 0; i < NPROC; i++){
-    p = proc[i].name;
-    for(j = 0; j < 15; j++){
-      if(*p)
-	buf[j] = *(p++);
-      else
-	buf[j] = ' ';
-    }
-    myprintf("%s", buf);
-    myprintf("%s", statusStrings[proc[i].status]);
-    myprintf("   %d       ", proc[i].pid);
-    myprintf("%d\n", proc[i].ppid);
-  }
-  myprintf("----------------------------------------\n");
-  return 0;
+   printf("============================================\n");
+   printf("  name         status      pid       ppid  \n");
+   printf("--------------------------------------------\n");
+
+   for (i=0; i<NPROC; i++){
+       strcpy(buf,"               ");
+       p = proc[i].name;
+       j = 0;
+       while (*p){
+             buf[j] = *p; j++; p++;
+       }      
+       prints(buf);    prints(" ");
+       
+       if (proc[i].status != FREE){
+           if (running==&proc[i])
+              prints("running");
+           else
+              prints(hh[proc[i].status]);
+           prints("     ");
+           printd(proc[i].pid);  prints("        ");
+           printd(proc[i].ppid);
+       }
+       else{
+              prints("FREE");
+       }
+       printf("\n");
+   }
+   printf("---------------------------------------------\n");
+
+   return(0);
 }
 
-int do_chname(char *y){
+#define NAMELEN 32
+int chname(char * y)
+{
   char buf[64];
   char *cp = buf;
-  int count = 0;
+  int count = 0; 
 
-  while(count < 32){
-    *cp = get_byte(running->uss, y);
-    if(*cp == 0) break;
-    cp++; y++; count++;
+  while (count < NAMELEN){
+     *cp = get_byte(running->uss, y);
+     if (*cp == 0) break;
+     cp++; y++; count++;
   }
   buf[31] = 0;
 
-  myprintf("changing name of proc %d to %s\n", running->pid, buf);
-  strcpy(running->name, buf);
-  myprintf("done\n");
+  printf("changing name of proc %d to %s\n", running->pid, buf);
+  strcpy(running->name, buf); 
+  printf("done\n");
 }
 
-int do_kkfork(){
-  PROC *p = kfork("/bin/u1");
-  if(!p){
+
+
+int vfork()
+{
+  PROC *p;  int pid;  u16 segment;
+  int i, w;
+  printf("vfork() in kernel\n");
+  p = kfork(0);   // kfork() but do NOT load any Umode image for child 
+  if (p == 0){     // kfork failed 
     return -1;
   }
+  /*******************************************************************  
+  entend parents ustack with another syscall frame for child to return with
+  -------------------------------------------------------
+       |cds ces ......cax....<===..|pds pes ........cax f    |         
+  ------------------------------------------------------
+        cusp                    pusp            frame from pid=vfork()
+
+  cusp = running->usp -24; <== more also need the return frames before INT 80
+  copy psup 24 bytes to cusp:
+
+/*************************************************************************
+  usp  1   2   3   4   5   6   7   8   9  10   11   12    13  14  15  16
+----------------------------------------------------------------------------
+ |uds|ues|udi|usi|ubp|udx|ucx|ubx|uax|upc|ucs|uflag|retPC| a | b | c | d |
+----------------------------------------------------------------------------
+***************************************************************************/
+  
+  printf("fix ustack for child to return to Umode\n");
+
+  for (i=0; i<24; i++){  // 24=13+9 is enough > 24 should also work
+     w = get_word(running->uss, running->usp+i*2);
+         put_word(w, running->uss, running->usp-1024+i*2);
+  }
+
+  p->uss = running->uss;
+  p->usp = running->usp - 1024;
+
+  //printf("%x  %x   %x  %x\n", running->uss, running->usp, p->uss, p->usp);
+
+  put_word(0,running->uss,p->usp+8*2);
+
+  p->kstack[SSIZE-1] = goUmode; 
+
+  printList("readyQueue ", readyQueue);
+
   return p->pid;
-}
-int exec(char *y)
-{
-  int i, len;
-   u16 segment, offset, HIGH;
-   char line[64], *cp, c;
-
-   char filename[32], f2[16],*cq;
-
-   segment = running->uss; // if vfork()ed, we are using parent's segment
-  /* get command line line from U space */
-   cp = line;
-   while( (*cp=get_byte(segment, y)) != 0 ){
-          y++; cp++;
-   }
-
-   // now we are using our own segment
-   segment = (running->pid+1)*(0x1000)/2;
-   //   printf("exec : line=%s\n", line);
-   /* extract filename to exec */
-   cp = line;        cq = f2;
-
-   while(*cp == ' ')  /* SAFETY: skip over leading blanks */
-     cp++;
-
-   while (*cp != ' ' && *cp != 0){
-         *cq = *cp;
-          cq++; cp++;
-   }
-   *cq = 0;
-
-   if (f2[0]==0){
-       return -1;     /* should NOT happen but just in case */
-   }
-   //printf("exec : cmd=%s   len=%d\n", f2, strlen(f2));
-   strcpy(filename, "/bin/");   /* all executables are in /bin */
-   strcat(filename, f2);
-   //   strcpy(running->name, f2);   /* program name */
-
-   printf("Proc %d exec to %s in segment %x\n",
-           running->pid, filename, segment);
-
-   //segment = (running->pid+1)*0x1000;
-
-   if (!load(filename, segment))
-     return -1;
-
-   len = strlen(line) + 1;
-   if (len % 2)   // odd ==> must pad a byte
-     len ++;
-
-   offset = -len;
-  // put_uword()/put_ubyte() are relative to running->uss
-   for (i=0; i<len; i++){
-       put_byte(line[i], segment, offset+i);
-   }
-
-   HIGH = offset - 2;  /* followed by INT stack frame */
-
-   /* *s pointing at the command line string */
-   put_word(offset, segment, HIGH);
-
-   /* zero out U mode registers in ustack di to ax */
-   for (i=1; i<=12; i++){
-     put_word(0, segment, HIGH-2*i);
-   }
-
-   // must set PROC.uss to our own segment
-   running->uss = segment;
-   running->usp = HIGH-2*12;
-/* re-initialize usp to new ustack top */
-   /*   0    1   2   3  4  5  6  7  8  9  10 11 12
-   /*      flag uCS uPC ax bx cx dx bp si di es ds */
-   /* HIGH                                      sp */
-   put_word(running->uss, segment, HIGH-2*12);   // uDS=uSS
-   put_word(running->uss, segment, HIGH-2*11);   // uES=uSS
-   put_word(0,            segment, HIGH-2*3);    // uPC=0
-   put_word(segment,      segment, HIGH-2*2);    // uCS=segment
-   put_word(0x0200,       segment, HIGH-2*1);        // flag
 }
 

@@ -1,41 +1,30 @@
-        .globl _main,_syscall,_exit,_getcs
-        .globl _getc, _putc, _color
+!********************************************************************
+!Copyright 2010-2015 K.C. Wang, <kwang@eecs.wsu.edu>
+!This program is free software: you can redistribute it and/or modify
+!it under the terms of the GNU General Public License as published by
+!the Free Software Foundation, either version 3 of the License, or
+!(at your option) any later version.
 
-	
-        call _main
-	
-! if main() ever return, exit(0)
+!This program is distributed in the hope that it will be useful,
+!but WITHOUT ANY WARRANTY; without even the implied warranty of
+!MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!GNU General Public License for more details.
+
+!You should have received a copy of the GNU General Public License
+!along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!********************************************************************/
+	.globl _syscall,_main0,_exit,auto_start
+        .globl _getcs
+auto_start:		
+         call _main0
+! if ever return, exit(0)
 	push  #0
         call  _exit
-
-_getcs:
-        mov   ax, cs
-        ret
 
 _syscall:
         int    80
         ret
-
-	!---------------------------------------------
-        !  char getc( ): call BIOS to get a char
-        !---------------------------------------------
-_getc:
-        xorb   ah,ah           ! clear ah
-        int    0x16            ! call BIOS to get a char in AX
-        andb   al,#0x7F        ! 7-bit ascii  
-        ret 
-	
-        !----------------------------------------------
-        ! int putc(char c): call BIOS to print a char
-        !----------------------------------------------
-_putc:           
-        push   bp
-	mov    bp,sp
-
-        movb   al,4[bp]        ! get the char into aL
-        movb   ah,#14          ! aH = 14
-        mov    bx,_color       ! cyan
-        int    0x10            ! call BIOS to display the char
-
-        pop    bp
+_getcs:
+	mov   ax,cs
 	ret
+	

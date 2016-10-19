@@ -1,64 +1,75 @@
+/********************************************************************
+Copyright 2010-2015 K.C. Wang, <kwang@eecs.wsu.edu>
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+********************************************************************/
 // ucode.c file
 
-char *cmd[]={"getpid", "ps", "chname", "switch", "wait", "exit", "fork", "exec", "hop" 0};
-
-#define LEN 64
+char *cmd[]={"getpid", "ps", "chname", "kmode", "switch", "wait", "exit", 
+             "fork", "exec", "vfork", 0};
 
 int show_menu()
 {
-   printf("***************** Menu *****************************\n");
-   printf("*  ps  chname  switch  wait  exit  fork  exec  hop*\n");
-   printf("****************************************************\n");
+   printf("************************* Menu *****************************\n");
+   printf("* ps  chname  kmode  switch  wait  exit  fork  exec  vfork *\n");
+   /*         1     2      3      4      5     6     7     8      */
+   printf("************************************************************\n");
 }
 
 int find_cmd(char *name)
 {
-  int i;
-  for(i = 0; cmd[i]; i++){
-    if(!strcmp(name, cmd[i]))
-      return i;
-  }
-  return -1;
+   int i;   char *p;
+   i = 0;   p = cmd[0];
+   while (p){
+         if (strcmp(p, name)==0)
+            return i;
+         i++;  p = cmd[i];
+   } 
+   return(-1);
 }
+
 
 int getpid()
 {
-  //  printf("entering the kernel to get pid...\n");
    return syscall(0,0,0);
 }
 
 int ps()
 {
-  printf("entering the kernel to print processes...\n");
-   return syscall(1, 0, 0);
+   syscall(1, 0, 0);
 }
 
 int chname()
 {
-    char s[32];
+    char s[64];
     printf("input new name : ");
     gets(s);
-    return syscall(2, s, 0);
+    syscall(2, s, 0);
 }
 
-int kfork()
-{   
-  int child, pid;
-  pid = getpid();
-  printf("proc %d enter kernel to kfork a child\n", pid); 
-  child = syscall(3, 0, 0);
-  if(child < 0)
-    printf("kfork failed!\n");
-  else
-    printf("proc %d kforked a child %d\n", pid, child);
+int kmode()
+{
+    printf("kmode : enter Kmode via INT 80\n");
+    printf("proc %d going K mode ....\n", getpid());
+        syscall(3, 0, 0);
+    printf("proc %d back from Kernel\n", getpid());
 }    
 
 int kswitch()
 {
-  int child;
-  printf("proc %d entering kernel to switch process\n", getpid());
-    return syscall(4,0,0);
-    printf("proc %d back form kernel\n", getpid());
+    printf("proc %d enter Kernel to switch proc\n", getpid());
+        syscall(4,0,0);
+    printf("proc %d back from Kernel\n", getpid());
 }
 
 int wait()
@@ -69,52 +80,70 @@ int wait()
     printf("proc %d back from wait, dead child=%d", getpid(), child);
     if (child>=0)
         printf("exitValue=%d", exitValue);
-    printf("\n"); 
+    printf("\n");
+    return child; 
 } 
-
-
-int geti()
-{
-  // return an input integer
-  char input[16];
-  return atoi(gets(input));
-
-}
-
 
 int exit()
 {
-   int exitValue;
-   char *input;
-   printf("enter an exitValue: ");
-   //   gets(input);
-   //   exitValue = getint(input);
-   exitValue = geti();
-   printf("exitvalue=%d\n", exitValue);
-   printf("enter kernel to die with exitValue=%d\n", exitValue);
-   _exit(exitValue);
+   char exitValue;
+   printf("enter an exitValue (0-9) : ");
+   exitValue=(getc()&0x7F) - '0';
+   printf("enter kernel to die with exitValue=%d\n",exitValue);
+   _kexit(exitValue);
 }
 
-int _exit(int exitValue)
+int _kexit(int exitValue)
 {
-  return syscall(6,exitValue,0);
+  syscall(6,exitValue,0);
 }
+
+int fork()
+{
+  int child;
+  child = syscall(7,0,0,0);
+  if (child)
+    printf("parent % return form fork, child=%d\n", getpid(), child);
+  else
+    printf("child %d return from fork, child=%d\n", getpid(), child);
+}
+
+int exec()
+{
+  int r;
+  char filename[32];
+  printf("enter exec filename : ");
+  gets(filename);
+  r = syscall(8,filename,0,0);
+  printf("exec failed\n");
+}
+
+int vfork()
+{
+  return syscall(9,0,0,0);
+}
+
+int do_vfork()
+{
+  int pid, status;
+  printf("do_vfork()\n");
+  pid = vfork();
+  if (pid){
+    printf("vfork parent %d waits\n", getpid());
+     pid = wait(&status);
+     printf("vfork parent %d back form wait, dead child=%d\n", getpid(),pid);
+  }
+  else{
+    printf("vforked child %d in segment=%x\n", getpid(), getcs());
+    printf("This is Goldilocks playing in Papa bear's bed\n");
+    printf("EXEC NOW! before he wakes up\n");
+    syscall(8,"u2 Bye! Bye! Papa Bear");
+    printf("exec failed\n");
+  }
+}
+
 
 int invalid(char *name)
 {
     printf("Invalid command : %s\n", name);
 }
-
-/*
-Assume: In MTX, P1 is a Casanova process, which hops, not from bed to bed,
-but from segment to segment. Initially, P1 runs in the segment 0×2000. By a
-hop(u16 segment) syscall, it enter kernel to change segment. When it returns to
-Umode, it returns to an IDENTICAL Umode image but in a different segment,
-e.g. 0×4000. Devise an algorithm for the hop() syscall, and implement it in
-MTX to satisfy the lusts of Casanova processes.
-*/
-
-int dohop(){
-
-}
-

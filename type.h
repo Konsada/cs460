@@ -1,12 +1,9 @@
-#ifndef TYPE_H
-#define TYPE_H
-
 typedef unsigned char   u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
-
-#define NPROC   17 
-#define SSIZE  512
+#define NULL     0
+#define NPROC    9
+#define SSIZE 1024
 
 /******* PROC status ********/
 #define FREE     0
@@ -16,25 +13,11 @@ typedef unsigned long  u32;
 #define SLEEP    4
 #define ZOMBIE   5
 
-#define NFD       10
-#define NOFT      40
-#define NPIPE     10
-#define PSIZE     64
-
-#define READ       0
-#define WRITE      1
-#define RW         2
-#define APPEND     3
-#define READ_PIPE  4
-#define WRITE_PIPE 5
-
-
 typedef struct proc{
     struct proc *next;
-    int    *ksp;               // at offset 2
-
-    int    uss, usp;           // at offsets 4,6
-    int    inkmode;            // at offset 8
+    int    *ksp;
+    int    uss, usp;
+    int    inkmode;            // added for interrupt processing
 
     int    pid;                // add pid for identify the proc
     int    status;             // status = FREE|READY|RUNNING|SLEEP|ZOMBIE    
@@ -43,35 +26,9 @@ typedef struct proc{
     int    priority;
     int    event;
     int    exitCode;
-    char   name[32];           // name string of PROC
+    char   name[32];
+
+    int    time;               // time slice
 
     int    kstack[SSIZE];      // per proc stack area
 }PROC;
-
-typedef struct Oft{
-  int   mode;
-  int   refCount;
-  struct Minode *inodeptr;
-  struct pipe *pipe_ptr;
-  long  offset;
-  char  name[32];
-} OFT;
-
-typedef struct pipe{
-        char  buf[PSIZE];
-        int   head, tail, data, room;
-        OFT   *nreader, *nwriter;
-        int   busy;
-}PIPE;
-
-
-PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList, *zombieList;
-int procSize = sizeof(PROC);
-int nproc = 0;
-int rflag;
-
-char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter", 
-               "Saturn", "Uranus", "Neptune" };
-
-int body();
-#endif
