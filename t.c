@@ -1,18 +1,3 @@
-/********************************************************************
-Copyright 2010-2015 K.C. Wang, <kwang@eecs.wsu.edu>
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-********************************************************************/
 #include "type.h"
 
 PROC proc[NPROC], *running, *freeList, *readyQueue, *sleepList;
@@ -26,10 +11,11 @@ char *pname[]={"Sun", "Mercury", "Venus", "Earth",  "Mars", "Jupiter",
 /**************************************************
   bio.o, queue.o loader.o are in mtxlib
 **************************************************/
-#include "wait.c"
-#include "kernel.c"
+//#include "wait.c"
+//#include "kernel.c"
+
+// #include "fe.c"
 #include "int.c"
-#include "fe.c"
 #include "timer.c"
 
 int init()
@@ -70,7 +56,6 @@ int scheduler()
     }
     running = dequeue(&readyQueue);
     running->status = RUNNING;
-    running->time = 5;   // time slice
 }
 
 int int80h(), tinth();

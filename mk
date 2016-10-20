@@ -1,14 +1,16 @@
-VFD=../FDimage
+VFD=mtximage
 
 as86 -o ts.o ts.s
 bcc  -c -ansi t.c
-ld86 -d -o mtx ts.o t.o mtxlib /usr/lib/bcc/libc.a
+ld86 -d -o mtx ts.o t.o OBJ/*.o mtxlib /usr/lib/bcc/libc.a
 
-mount -o loop $VFD /mnt
-cp mtx /mnt/boot
-umount /mnt
-rm *.o mtx
+mkdir ./mnt
+sudo mount -o loop $VFD ./mnt
+ls
+cp mtx ./mnt/boot
+umount ./mnt
 
-(cd USER; mkallu)
+
+(cd USER; ./mkallu)
 
 echo done

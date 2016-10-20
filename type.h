@@ -27,8 +27,5 @@ typedef struct proc{
     int    event;
     int    exitCode;
     char   name[32];
-
-    int    time;               // time slice
-
     int    kstack[SSIZE];      // per proc stack area
 }PROC;
