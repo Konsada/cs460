@@ -1,15 +1,23 @@
-	.globl _syscall,_main0,_exit,auto_start
-        .globl _getcs
-auto_start:		
-         call _main0
-! if ever return, exit(0)
-	push  #0
-        call  _exit
+.globl _getcs
+.globl _main,_prints,_syscall
+
+
+        call _main
+
+        mov   ax,#mes
+        push  ax
+        call  _prints
+        pop   ax
+
+dead:   jmp   dead
+
+mes:    .asciz "BACK TO ASSEMBLY AGAIN\n\r"
+
+_getcs:
+        mov   ax, cs
+        ret
 
 _syscall:
         int    80
         ret
-_getcs:
-	mov   ax,cs
-	ret
-	
+

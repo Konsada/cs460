@@ -1,41 +1,49 @@
-#define PA 13
-#define PB 14
-#define PC 15
-#define PD 16
-#define AX  8
-
-extern int color;
- 
-int kcinth()
+/************** syscall routing table ***********/
+int kcinth() 
 {
-   u16    segment, offset;
-   int    a,b,c,d, r;
+  u16 x, y, z, w, r; 
+  u16 seg, off;
 
-   segment = running->uss; 
-   offset = running->usp;
+  seg = running->uss; off = running->usp;
 
-   a = get_word(segment, offset + 2*PA);
-   b = get_word(segment, offset + 2*PB);
-   c = get_word(segment, offset + 2*PC);
-   d = get_word(segment, offset + 2*PD);
+  x = get_word(seg, off+13*2);
+  y = get_word(seg, off+14*2);
+  z = get_word(seg, off+15*2);
+  w = get_word(seg, off+16*2);
+  
+   switch(x){
+       case 0 : r = running->pid;    break;
+       case 1 : r = kps();           break;
+       case 2 : r = chname(y);       break;
+       case 3 : r = kmode();         break;
+       case 4 : r = tswitch();       break;
+       case 5 : r = kwait();         break;
+       case 6 : r = kexit();         break;
+       case 7 : r = fork();          break;
+       case 8 : r = kexec(y);        break;
 
-   switch(a){
-       case 0 : r = running->pid;     break;
-       case 1 : r = do_ps();          break;
-       case 2 : r = chname(b);        break;
-       case 3 : r = kmode();          break;
-       case 4 : r = tswitch();        break;
-       case 5 : r = do_wait(b);       break;
-       case 6 : r = do_exit(b);       break;
-        
-       case 7 : r = fork();           break;
-       case 8 : r = exec(b);          break;
-       
-       case 90: r =  getc();          break;
-       case 91: color=running->pid+11;
-                r =  putc(b);         break;       
-       case 99: do_exit(b);           break;
-       default: printf("invalid syscall # : %d\n", a); 
+
+       // FOCUS on ksin() nd ksout()
+       case 9 : r = ksout(y);        break;
+       case 10: r = ksin(y);         break;
+
+       case 99: r = kexit();         break;
+
+       default: printf("invalid syscall # : %d\n", x);
+
    }
-   put_word(r, segment, offset + 2*AX);
+   put_word(r, seg, off+2*8);
 }
+
+
+int ksin(char *y)
+{
+  // get a line from serial port 0; write line to Umode
+}
+
+int ksout(char *y)
+{
+  // get line from Umode; write line to serial port 0
+}
+
+
