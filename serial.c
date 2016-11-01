@@ -2,7 +2,7 @@
 /**************** CONSTANTS ***********************/
 #define BUFLEN      64
 #define NULLCHAR     0
-
+#define BEEP         7
 #define NR_STTY      2    /* number of serial ports */
 
 /* offset from serial ports base */
@@ -22,12 +22,12 @@ struct stty {
    /* input buffer */
    char inbuf[BUFLEN];
    int inhead, intail;
-   struct semaphore inchars;
+   struct semaphore inchars, inmutex;
 
    /* output buffer */
    char outbuf[BUFLEN];
    int outhead, outtail;
-   struct semaphore outroom;
+   struct semaphore outroom, outmutex;
    int tx_on;
 
    /* Control section */
@@ -85,7 +85,7 @@ int sinit()
       t->inchars.value  = 0;  t->inchars.queue = 0;
       t->inmutex.value  = 1;  t->inmutex.queue = 0;
       t->outmutex.value = 1;  t->outmutex.queue = 0;
-      t->outroom.value = OUTBUFLEN; t->outroom.queue = 0;
+      t->outroom.value = BUFLEN; t->outroom.queue = 0;
 
       t->inhead = t->intail = 0;
       t->outhead =t->outtail = 0;
@@ -199,20 +199,42 @@ int do_rx(struct stty *tty)   /* interrupts already disabled */
   printf("port %x interrupt:c=%c ", tty->port, c,c);
 
   // Write code to put c into inbuf[ ]; notify process of char available;  
+  if(tty->inchars.value >= BUFLEN){
+    bputc(tty->port, BEEP);
+    return;
+  }
+
+  bputc(tty->port, c);
+  tty->inbuf[tty->inhead++] = c;
+  tty->inhead %= BUFLEN;
+
+  V(&tty->inchars);
 }      
      
 int sgetc(struct stty *tty)
 { 
   int c;
   // write Code to get a char from inbuf[ ]
+  P(&tty->inchars); // wait if no input character yet...
+  lock();           // disable interrupts
+
+  c = tty->inbuf[tty->intail++];  // get character from serial input buffer
+  tty->intail %= BUFLEN;
+
+  unlock();         // enable interrupts
   return(c);
 }
 
 int sgetline(struct stty *tty, char *line)
 {  
    // write code to input a line from tty's inbuf[ ] 
-
-   return strlen(line);
+  P(&tty->inmutex);
+  while((*line = sgetc(tty)) != '\n'){
+    line++;
+  }
+  *line = 0;
+  V(&tty->inmutex);
+  return strlen(line);
 }
 
 
@@ -228,15 +250,38 @@ int do_tx(struct stty *tty)
 
   // write code to output a char from tty's outbuf[ ]
   //       out_byte(tty->port, c); will output c to port
+  if(tty->outroom.value < BUFLEN){
+    c = tty->outbuf[tty->outtail++];
+    tty->outtail %= BUFLEN;
+    out_byte(tty->port, c);
+    V(&tty->outroom)
+    return;
+  }
 }
 
 int sputc(struct stty *tty, int c)
 {
   // write code to put c into tty's outbuf[ ]
+  P(&tty->outroom);
+  lock();
+  tty->outbuf[tty->outhead++] = c;
+  tty->outhead %= BUFLEN;
+  unlock();
   // enable tx_interrupt
+  if(!tty->tx_on)
+    enable_tx(tty);
+
+  return 1;
 }
 
 int sputline(struct stty *tty, char *line)
 {
   // write code to output a line to tty
+  P(&tty->outmutex);
+  while(*line){
+    sputc(tty, *line);
+    line++;
+  }
+  V(&tty->outmutex);
 }
+
